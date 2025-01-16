@@ -1,0 +1,16 @@
+SampleID,Sample_name,Rep,Kit,Kits,Seq,Sample,Kit2
+AP_1,AP_1,1,AP,AllPrep,112,Zymo,AP
+AP_2,AP_2,2,AP,AllPrep,112,Zymo,AP
+AP_3,AP_3,3,AP,AllPrep,112,Zymo,AP
+PS_1,PS_1,1,PS,PowerSoil,112,Zymo,PS
+PS_3,PS_2,3,PS,PowerSoil,112,Zymo,PS
+PS_2,PS_3,2,PS,PowerSoil,112,Zymo,PS
+PF_2,PF_2,2,PF,PowerFecal,112,Zymo,PF
+PF_1,PF_1,1,PF,PowerFecal,112,Zymo,PF
+PF_3,PF_3,3,PF,PowerFecal,112,Zymo,PF
+BM_1,BM_1,1,BM,MP Biomedical,112,Zymo,BM
+BM_2,BM_2,2,BM,MP Biomedical,112,Zymo,BM
+MB_1,MB_1,1,MB,MagBead,112,Zymo,MB
+MB_2,MB_2,2,MB,MagBead,112,Zymo,MB
+MB_3,MB_3,3,MB,MagBead,112,Zymo,MB
+BM_3,BM_3,3,BM,MP Biomedical,112,Zymo,BM

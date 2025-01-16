@@ -1,0 +1,58 @@
+tax_id,superkingdom,phylum,class,order,family,genus,species
+8932,Bacteria,Actinobacteriota,Actinobacteria,Corynebacteriales,Mycobacteriaceae,Mycobacterium,Mycobacterium insubricum
+3742,Bacteria,Actinobacteriota,Actinobacteria,Corynebacteriales,Nocardiaceae,Nocardia,Nocardia veterana
+365,Bacteria,Actinobacteriota,Actinobacteria,Corynebacteriales,Nocardiaceae,Rhodococcus,Rhodococcus 
+76,Bacteria,Cyanobacteria,Cyanobacteriia,Chloroplast,,, 
+27,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus 
+28,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus amyloliquefaciens
+1665,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus atrophaeus
+14885,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus glycinifermentans
+1024,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus halotolerans
+18756,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus intestinalis
+720,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus pumilus
+410,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus subtilis
+3569,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus vallismortis
+569,Bacteria,Firmicutes,Bacilli,Bacillales,Bacillaceae,Bacillus,Bacillus velezensis
+945,Bacteria,Firmicutes,Bacilli,Exiguobacterales,Exiguobacteraceae,Exiguobacterium,Exiguobacterium 
+12409,Bacteria,Firmicutes,Bacilli,Lactobacillales,Carnobacteriaceae,Alloiococcus,Alloiococcus 
+4462,Bacteria,Firmicutes,Bacilli,Lactobacillales,Carnobacteriaceae,Granulicatella,Granulicatella 
+249,Bacteria,Firmicutes,Bacilli,Lactobacillales,Enterococcaceae,Enterococcus,Enterococcus 
+356,Bacteria,Firmicutes,Bacilli,Lactobacillales,Enterococcaceae,Enterococcus,Enterococcus faecalis
+3255,Bacteria,Firmicutes,Bacilli,Lactobacillales,Enterococcaceae,Enterococcus,Enterococcus lactis
+16754,Bacteria,Firmicutes,Bacilli,Lactobacillales,Lactobacillaceae,, 
+246,Bacteria,Firmicutes,Bacilli,Lactobacillales,Lactobacillaceae,Lactiplantibacillus,Lactiplantibacillus 
+1827,Bacteria,Firmicutes,Bacilli,Lactobacillales,Lactobacillaceae,Lactobacillus,Lactobacillus 
+1281,Bacteria,Firmicutes,Bacilli,Lactobacillales,Lactobacillaceae,Latilactobacillus,Latilactobacillus 
+485,Bacteria,Firmicutes,Bacilli,Lactobacillales,Lactobacillaceae,Limosilactobacillus,Limosilactobacillus 
+13659,Bacteria,Firmicutes,Bacilli,Lactobacillales,Listeriaceae,Listeria,Listeria 
+4559,Bacteria,Firmicutes,Bacilli,Lactobacillales,Listeriaceae,Listeria,Listeria innocua
+3603,Bacteria,Firmicutes,Bacilli,Lactobacillales,Listeriaceae,Listeria,Listeria ivanovii
+1093,Bacteria,Firmicutes,Bacilli,Lactobacillales,Listeriaceae,Listeria,Listeria monocytogenes
+3826,Bacteria,Firmicutes,Bacilli,Lactobacillales,Listeriaceae,Listeria,Listeria welshimeri
+106,Bacteria,Firmicutes,Bacilli,Lactobacillales,Streptococcaceae,Streptococcus,Streptococcus 
+327,Bacteria,Firmicutes,Bacilli,Paenibacillales,Paenibacillaceae,Paenibacillus,Paenibacillus 
+201,Bacteria,Firmicutes,Bacilli,Staphylococcales,Staphylococcaceae,Staphylococcus,Staphylococcus 
+8389,Bacteria,Firmicutes,Bacilli,Staphylococcales,Staphylococcaceae,Staphylococcus,Staphylococcus argenteus
+247,Bacteria,Firmicutes,Bacilli,Staphylococcales,Staphylococcaceae,Staphylococcus,Staphylococcus aureus
+16200,Bacteria,Firmicutes,Bacilli,Staphylococcales,Staphylococcaceae,Staphylococcus,Staphylococcus simiae
+12073,Bacteria,Firmicutes,Bacilli,Staphylococcales,Staphylococcaceae,Staphylococcus,Staphylococcus simulans
+96,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Citrobacter,Citrobacter 
+13,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Enterobacter,Enterobacter 
+518,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Enterobacter,Enterobacter cloacae
+510,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Enterobacter,Enterobacter hormaechei
+245,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella 
+4615,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella albertii
+4655,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella boydii
+14,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella coli
+4069,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella dysenteriae
+445,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella fergusonii
+1212,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella flexneri
+5954,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Escherichia-Shigella,Escherichia-Shigella sonnei
+2309,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Salmonella,Salmonella 
+8722,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Salmonella,Salmonella bongori
+590,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Enterobacteriaceae,Salmonella,Salmonella enterica
+80,Bacteria,Proteobacteria,Gammaproteobacteria,Enterobacterales,Vibrionaceae,Vibrio,Vibrio 
+7,Bacteria,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Pseudomonadaceae,Pseudomonas,Pseudomonas 
+269,Bacteria,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Pseudomonadaceae,Pseudomonas,Pseudomonas aeruginosa
+179,Bacteria,Proteobacteria,Gammaproteobacteria,Xanthomonadales,Xanthomonadaceae,Stenotrophomonas,Stenotrophomonas 
+unassigned,unassigned,,,,,, 

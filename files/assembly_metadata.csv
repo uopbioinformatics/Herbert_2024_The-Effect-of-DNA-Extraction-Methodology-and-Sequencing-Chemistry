@@ -1,0 +1,17 @@
+﻿Genus,Specie,Chem,Indels,Fraction,Contigs,N50,Largest_contig,N_100kb,Mismatch_100kb,Indels_100kb,No_genomes,Completeness,Contamination,heterogeneity,Depth,Coverage
+Escherichia-Shigella,Escherichia coli,LSK109,448,99.91,26,0.680918,2.705429,0,53.94,9.04,5656,100,197.02,57.48,18.15,99.99
+Escherichia-Shigella,Escherichia coli,LSK112,249,99.91,43,0.51469,2.718587,0,52.19,5.02,5656,100,137.5,39.18,25.22,99.99
+Enterococcus,Enterococcus faecalis,LSK109,213,100,61,2.845287,2.845287,0,3.2,7.48,5449,98.28,123.56,10.05,12.17,100
+Enterococcus,Enterococcus faecalis,LSK112,49,100,69,2.845461,2.845461,0,3.92,1.72,5656,100,183.33,11.55,16.75,99.99
+Staphylococcus,Staphylococcus aureus,LSK109,74,99.57,57,2.718678,2.718678,0,0.92,2.72,5449,98.28,127.72,5.89,17.22,100
+Staphylococcus,Staphylococcus aureus,LSK112,22,99.41,79,0.627848,1.113747,0,1.14,0.81,5449,98.28,127.43,6.33,24.69,99.99
+Salmonella,Salmonella enterica,LSK109,519,99.93,24,0.710276,4.762873,0,45.51,10.6,5656,100,190.58,58.49,39.65,99.99
+Salmonella,Salmonella enterica,LSK112,288,99.78,46,0.689242,2.34421,0,41.23,5.89,5656,100,181.25,56.41,51.05,99.99
+Pseudomonas,Pseudomonas aeruginosa,LSK109,253,99.97,98,3.047633,3.744243,0,11.76,3.72,5449,100,78.32,40.5,25.28,99.99
+Pseudomonas,Pseudomonas aeruginosa,LSK112,43,99.78,107,0.784931,2.80902,0,9.13,0.63,5449,100,62.95,14.74,24.14,99.99
+Listeria,Listeria monocytogenes,LSK109,141,99.93,78,2.983394,2.983394,0,3.08,4.71,5656,100,231.48,8.44,13.66,99.99
+Listeria,Listeria monocytogenes,LSK112,68,99.99,83,2.992112,2.992112,0,3.14,2.27,5449,100,126.28,6.7,16.31,99.99
+Limsilolactobacillus,Lactobacillus fermentum,LSK109,120,100,17,1.916493,1.916493,0,18.31,6.26,5449,98.28,17.62,2.25,27.53,100
+Limsilolactobacillus,Lactobacillus fermentum,LSK112,123,99.53,22,0.608827,0.867015,0,25.6,6.41,5449,98.28,15.09,4.05,27.71,99.99
+Bacillus,Bacillus subtilis,LSK109,353,99.95,21,4.045506,4.045506,0,1.78,8.72,5449,98.28,79.86,10.75,18.15,99.99
+Bacillus,Bacillus subtilis,LSK112,90,99.77,28,3.970596,3.970596,0,1.71,2.23,5449,98.28,79.23,10.75,25.22,99.99
