@@ -1,0 +1,387 @@
+#Create subset file of time for raw and trim reads for adaptive runs (to the first 8 hours).
+
+#Create list of reads that occur within the first 8 hours (28800 seconds)
+
+#LSK112
+
+cd [data_dir]/LSK112/
+
+awk 'BEGIN{FS = "\t"}; $7 <= 28800 {print $2}' sequencing_summary_112.txt > eight_hour_reads.txt
+
+#LSK109
+
+cd [data_dir]/LSK109
+
+awk 'BEGIN{FS = "\t"}; $7 <= 28800 {print $2}' sequencing_summary_109.txt > eight_hour_reads.txt
+
+#Get total length of reads from summary seq file ($14= sequence_length_template, $7= start_time)
+
+#112 adaptive
+
+cd [data_dir]/LSK112_a/
+
+#Get reads only within first 8 hours ($14=sequence_length_template)
+awk 'BEGIN{FS = "\t"}; $7 <= 28800 {print $14}' sequencing_summary_112_a.txt > eight_hour_read_length.txt
+
+#109 adaptive
+
+cd [data_dir]/LSK109_a/
+
+awk 'BEGIN{FS = "\t"}; $7 <= 28800 {print $14}' sequencing_summary_109_a.txt > eight_hour_read_length.txt
+
+#Subset the fastq files for adaptive runs only
+
+cd cd [data_dir]/fastq/raw/
+
+#Use the list from above to subset the fastq files to the first 8 hours using seqtk
+
+conda activate pipeline
+
+#LSK112
+
+#trim
+
+seqtk subseq N2_EXP019_LSK112_Adaptive_0001.fq.gz cd [data_dir]/LSK112_a/eight_hour_reads.txt > N2_EXP019_LSK112_Adaptive_0001_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK112_Adaptive_0002.fq.gz cd [data_dir]/LSK112_a/eight_hour_reads.txt > N2_EXP019_LSK112_Adaptive_0002_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK112_Adaptive_0003.fq.gz cd [data_dir]/LSK112_a/eight_hour_reads.txt > N2_EXP019_LSK112_Adaptive_0003_s.fq.gz
+
+#Count the old fastq and new subsets to see thet have been reduced sensibly
+
+#Make sure to unzip file first before counting
+#zcat N2_EXP019_LSK109_Adaptive_0001.fq.gz | awk '{s++}END{print s/4}'
+
+#raw
+
+cd cd [data_dir]/fastq/raw/
+
+seqtk subseq N2_EXP019_LSK112_Adaptive_0001.fq.gz cd [data_dir]/LSK112_a/eight_hour_reads.txt > N2_EXP019_LSK112_Adaptive_0001_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK112_Adaptive_0002.fq.gz cd [data_dir]/LSK112_a/eight_hour_reads.txt > N2_EXP019_LSK112_Adaptive_0002_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK112_Adaptive_0003.fq.gz cd [data_dir]/LSK112_a/eight_hour_reads.txt > N2_EXP019_LSK112_Adaptive_0003_s.fq.gz
+
+#LSK109
+
+#trim
+
+cd  [data_dir]/LSK109_a/fastq/trim/
+
+seqtk subseq N2_EXP019_LSK109_Adaptive_0001.fq.gz [data_dir]/LSK109_a/fastq/trim/eight_hour_reads.txt > N2_EXP019_LSK109_Adaptive_0001_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK109_Adaptive_0002.fq.gz [data_dir]/LSK109_a/fastq/trim/eight_hour_reads.txt > N2_EXP019_LSK109_Adaptive_0002_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK109_Adaptive_0003.fq.gz  [data_dir]/LSK109_a/fastq/trim/eight_hour_reads.txt > N2_EXP019_LSK109_Adaptive_0003_s.fq.gz
+
+#raw
+
+cd [data_dir]/LSK109_a/fastq/raw/
+
+seqtk subseq N2_EXP019_LSK109_Adaptive_0001.fq.gz [data_dir]/LSK109_a/fastq/raw/eight_hour_reads.txt > N2_EXP019_LSK109_Adaptive_0001_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK109_Adaptive_0002.fq.gz [data_dir]/LSK109_a/fastq/raw/eight_hour_reads.txt > N2_EXP019_LSK109_Adaptive_0002_s.fq.gz
+
+seqtk subseq N2_EXP019_LSK109_Adaptive_0003.fq.gz [data_dir]/LSK109_a/fastq/raw/eight_hour_reads.txt > N2_EXP019_LSK109_Adaptive_0003_s.fq.gz
+
+#Map the fastq files to S. cerevisiae using minimap2 to get the read IDs
+
+cd [data_dir]/
+
+#trim
+
+#109_adaptive
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109_a/fastq/trim/N2_EXP019_LSK109_Adaptive_0001.fq.gz -o SC_109_adaptive.t_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109_a/fastq/trim/N2_EXP019_LSK109_Adaptive_0002.fq.gz -o SC_109_adaptive.t_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109_a/fastq/trim/N2_EXP019_LSK109_Adaptive_0003.fq.gz -o SC_109_adaptive.t_3.bam
+
+#109_full
+
+minimap2 -ax map-ont /[data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109/fastq/trim/N2_EXP019_LSK109_Full_0001.fq.gz -o SC_109_full.t_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109/fastq/trim/N2_EXP019_LSK109_Full_0002.fq.gz -o SC_109_full.t_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109/fastq/trim/N2_EXP019_LSK109_Full_0003.fq.gz -o SC_109_full.t_3.bam
+
+#112_adaptive
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112_a/fastq/trim/N2_EXP019_LSK112_Adaptive_0001.fq.gz -o SC_112_adaptive.t_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112_a/fastq/trim/N2_EXP019_LSK112_Adaptive_0002.fq.gz -o SC_112_adaptive.t_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112_a/fastq/trim/N2_EXP019_LSK112_Adaptive_0003.fq.gz -o SC_112_adaptive.t_3.bam
+
+#112_full
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112/fastq/trim/N2_EXP019_LSK112_Full_0001.fq.gz -o SC_112_full.t_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112/fastq/trim/N2_EXP019_LSK112_Full_0002.fq.gz -o SC_112_full.t_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112/fastq/trim/N2_EXP019_LSK112_Full_0003.fq.gz -o SC_112_full.t_3.bam
+
+#raw
+
+#109_adaptive
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109_a/fastq/raw/N2_EXP019_LSK109_Adaptive_0001.fq.gz -o SC_109_adaptive.r_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109_a/fastq/raw/N2_EXP019_LSK109_Adaptive_0002.fq.gz -o SC_109_adaptive.r_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109_a/fastq/raw/N2_EXP019_LSK109_Adaptive_0003.fq.gz -o SC_109_adaptive.r_3.bam
+
+#109_full
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109/fastq/raw/N2_EXP019_LSK109_Full_0001.fq.gz -o SC_109_full.r_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109/fastq/raw/N2_EXP019_LSK109_Full_0002.fq.gz -o SC_109_full.r_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK109/fastq/raw/N2_EXP019_LSK109_Full_0003.fq.gz -o SC_109_full.r_3.bam
+
+#112_adaptive
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112_a/fastq/raw/N2_EXP019_LSK112_Adaptive_0001.fq.gz -o SC_112_adaptive.r_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112_a/fastq/raw/N2_EXP019_LSK112_Adaptive_0002.fq.gz -o SC_112_adaptive.r_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112_a/fastq/raw/N2_EXP019_LSK112_Adaptive_0003.fq.gz -o SC_112_adaptive.r_3.bam
+
+#112_full
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112/fastq/raw/N2_EXP019_LSK112_Full_0001.fq.gz -o SC_112_full.r_1.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112/fastq/raw/N2_EXP019_LSK112_Full_0002.fq.gz -o SC_112_full.r_2.bam
+
+minimap2 -ax map-ont [data_dir]/GCF_000146045.2_Saccharomyces_cerevisiae.fasta [data_dir]/LSK112/fastq/raw/N2_EXP019_LSK112_Full_0003.fq.gz -o SC_112_full.r_3.bam
+
+#Ran samtools_reads_IDs.sh to get .txt files of readIDs.
+
+#Need to get total reads for trimmed fastq files
+
+gunzip -c N2_EXP019_LSK109_Adaptive_0001.fq | awk 'NR%4==1 {print substr($0, 2)}' | awk '{print $1}' > N2_EXP019_LSK109_Adaptive_0001_IDs.txt
+
+#Run BLAST using the ZymoBIOMICS db
+
+
+#Run BLAST of a database containing all ZMC references as per the manuscript against fastq files to get counts of how many reads map to each assembly
+
+
+#109 Adaptive
+
+#trim
+
+cd [data_dir]/trim/
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK109_Adaptive_0001.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK109_Adaptive_0001.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK109_Adaptive_0002.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK109_Adaptive_0002.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK109_Adaptive_0003.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK109_Adaptive_0003.BLAST.count
+
+#raw
+
+cd [data_dir]/raw/
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK109_Adaptive_0001.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK109_Adaptive_0001.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK109_Adaptive_0002.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK109_Adaptive_0002.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK109_Adaptive_0003.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK109_Adaptive_0003.BLAST.count
+
+#112 Adaptive
+
+#trim 
+
+cd /nfs2/NGS/pipeline/gridion/N2_EXP019_LSK112_Adaptive/processing_1//BLAST/ZymoBiomics_Microbial_Community_Standard/trim/
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK112_Adaptive_0001.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK112_Adaptive_0001.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK112_Adaptive_0002.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK112_Adaptive_0002.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK112_Adaptive_0003.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK112_Adaptive_0003.BLAST.count
+
+#raw
+
+cd /nfs2/NGS/pipeline/gridion/N2_EXP019_LSK112_Adaptive/processing_1//BLAST/ZymoBiomics_Microbial_Community_Standard/raw/
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK112_Adaptive_0001.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK112_Adaptive_0001.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK112_Adaptive_0002.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK112_Adaptive_0002.BLAST.count
+
+awk 'BEGIN{FS = "\t"}; {k=$1 OFS $2} $17>a[k]{a[k]=$17} END{for (i in a) print i}' N2_EXP019_LSK112_Adaptive_0003.BLAST.txt | cut -f 2 -d " " | cut -f1,2 -d "_" | sort | uniq -c | sort -k1,1rn > N2_EXP019_LSK112_Adaptive_0003.BLAST.count
+
+#R script to pull read counts and data for S. cerevisiae
+
+## Load libraries
+library("tidyverse")
+library("ggplot2")
+library("rstatix")
+library("ggpubr")
+library("gridExtra")
+
+## Count the mapped reads for each sample
+grid_dir <- "/[data_dir]/"
+all_dat <- list()
+for (kit in c("LSK109", "LSK112")) {
+  for (exp in c("Full", "Adaptive")) {
+    sname <- paste("N2_EXP019", kit, exp, sep = "_")
+    for (snum in 1:3) {
+      ## Load the BLAST results
+      blastout <- read.table(paste0(grid_dir, sname,
+                                    "/processing_1//BLAST/ZymoBiomics_Microbial_Community_Standard/trim/",
+                                    sname, "_000", snum, ".BLAST.count"))
+      names(blastout) <- c("NumMapped", "Species")
+      ## Load the NanoStat results
+      nanostat <- scan(paste0(grid_dir, sname,
+                              "/processing_1//QC/raw/nanostat/",
+                              sname, "_000", snum, ".nanostat.txt"),
+                       what = "character", sep = "\n")
+      
+      ## Add read count and mapping number to output
+      numreads <- as.numeric(gsub(",", "", gsub("^\\D*", "", nanostat[6], perl = TRUE)))
+      tmp <- data.frame(SampleName = paste0(sname, "_000", snum),
+                        Experiment = exp,
+                        Kit = kit,
+                        NumReadsRaw = numreads,
+                        NumReadsMapped = blastout[["NumMapped"]],
+                        Species = gsub("_", " ", blastout[["Species"]]),
+                        PercentMapped = as.numeric(sprintf("%.2f", 100*blastout[["NumMapped"]]/numreads)),
+                        stringsAsFactors = FALSE)
+      
+      ## Add unmapped values
+      unmap_num <- numreads - sum(blastout[["NumMapped"]])
+      unmap <- data.frame(SampleName = paste0(sname, "_000", snum),
+                          Experiment = exp,
+                          Kit = kit,
+                          NumReadsRaw = numreads,
+                          NumReadsMapped = unmap_num,
+                          Species = "Unmapped",
+                          PercentMapped = as.numeric(sprintf("%.2f", 100*unmap_num/numreads)),
+                          stringsAsFactors = FALSE)
+      all_dat[[paste(kit, exp, snum)]] <- rbind.data.frame(tmp, unmap)
+    }
+  }
+}
+
+## Combine the data
+all_dat <- do.call(rbind.data.frame, all_dat)
+all_dat[["Species"]] <- factor(all_dat[["Species"]], levels = sort(unique(all_dat[["Species"]])))
+all_dat[["Experiment"]] <- factor(all_dat[["Experiment"]], levels = c("Full", "Adaptive"))
+
+
+#To normalise the counts for adaptive runs I have already subsampled adaptive fastq files to only the first 8 hours (above).
+
+#We are also normalising by the total number of bases of the run to calculate the number of bases that map to the organism (read length is biased so no. reads is biased).
+
+#To calculate length of reads from fastq:
+
+#Adaptive
+
+#112
+
+#trim
+
+for gzipped_file in [data_dir]/LSK112_a/fastq/trim/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK112_a/fastq/trim/N2_EXP019_LSK112_Adaptive_0001.fq.gz : 2300500
+#Total length of reads in [data_dir]/LSK112_a/fastq/trim/N2_EXP019_LSK112_Adaptive_0002.fq.gz : 4940806
+#Total length of reads in [data_dir]/LSK112_a/fastq/trim/N2_EXP019_LSK112_Adaptive_0003.fq.gz : 213813
+
+#raw
+
+for gzipped_file in [data_dir]/LSK112_a/fastq/trim/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK112_a/fastq/raw/N2_EXP019_LSK112_Adaptive_0001.fq.gz : 138760178
+#Total length of reads in [data_dir]/LSK112_a/fastq/raw/N2_EXP019_LSK112_Adaptive_0002.fq.gz : 304691939
+#Total length of reads in [data_dir]/LSK112_a/fastq/raw/N2_EXP019_LSK112_Adaptive_0003.fq.gz : 10162371
+
+#109
+
+#trim
+
+for gzipped_file in [data_dir]/LSK109_a/fastq/trim/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK109_a/fastq/trim/N2_EXP019_LSK109_Adaptive_0001.fq.gz : 4079494
+#Total length of reads in [data_dir]/LSK109_a/fastq/trim/N2_EXP019_LSK109_Adaptive_0002.fq.gz : 14028753
+#Total length of reads in [data_dir]/LSK109_a/fastq/trim/N2_EXP019_LSK109_Adaptive_0003.fq.gz : 326544
+
+#raw
+
+for gzipped_file in [data_dir]/LSK109_a/fastq/trim/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK109_a/fastq/raw/N2_EXP019_LSK109_Adaptive_0001.fq.gz : 233611111
+#Total length of reads in [data_dir]/LSK109_a/fastq/raw/N2_EXP019_LSK109_Adaptive_0002.fq.gz : 739293550
+#Total length of reads in [data_dir]/LSK109_a/fastq/raw/N2_EXP019_LSK109_Adaptive_0003.fq.gz : 14162994
+
+#Full
+
+#112
+
+#trim
+
+for gzipped_file in [data_dir]/LSK112/fastq/trim/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK112/fastq/trim/N2_EXP019_LSK112_Full_0001.fq.gz : #485871980
+#Total length of reads in [data_dir]/LSK112/fastq/trim/N2_EXP019_LSK112_Full_0002.fq.gz : #953323814
+#Total length of reads in [data_dir]/LSK112/fastq/trim/N2_EXP019_LSK112_Full_0003.fq.gz : #36464118
+
+#raw
+
+for gzipped_file in [data_dir]/LSK109/fastq/raw/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK112/fastq/raw/N2_EXP019_LSK112_Full_0001.fq.gz : #550813668
+#Total length of reads in [data_dir]/LSK112/fastq/raw/N2_EXP019_LSK112_Full_0002.fq.gz : #1081761761
+#Total length of reads in [data_dir]/LSK112/fastq/raw/N2_EXP019_LSK112_Full_0003.fq.gz : #41179734
+
+#109
+
+#trim
+
+for gzipped_file in [data_dir]/LSK109/fastq/trim/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK109/fastq/trim/N2_EXP019_LSK109_Full_0001.fq.gz : #390978084
+#Total length of reads in [data_dir]/LSK109/fastq/trim/N2_EXP019_LSK109_Full_0002.fq.gz : #1168431616
+#Total length of reads in [data_dir]/LSK109/fastq/trim/N2_EXP019_LSK109_Full_0003.fq.gz : #24963071
+
+#raw
+
+for gzipped_file in [data_dir]/LSK109/fastq/raw/*.fq.gz; do gunzip -c "$gzipped_file" | awk -v filename="$gzipped_file" 'NR%4 == 2 { total += length($0) } END { print "Total length of reads in", filename, ":", total }'; done
+
+#Total length of reads in [data_dir]/LSK109/fastq/raw/N2_EXP019_LSK109_Full_0001.fq.gz : 661548691
+#Total length of reads in [data_dir]/LSK109/fastq/raw/N2_EXP019_LSK109_Full_0002.fq.gz : 2003046450
+#Total length of reads in [data_dir]/LSK109/fastq/raw/N2_EXP019_LSK109_Full_0003.fq.gz : 43035564
+
+#To calculate length of reads from mapped bam:
+
+#WITHOUT HEADER AND UNIQ READS
+
+for bam_file in [data_dir]/*.bam; do
+    echo "Total length of uniquely mapped reads in $bam_file: $(samtools view -F 4 -F 0x100 -F 0x800 "$bam_file" | awk '{if($1 !~ /^@/) total += length($10)} END { print total }')"
+done
+
+#Total length of uniquely mapped reads in [data_dir]/SC_109_adaptive.r_1.bam: 8019109
+#Total length of uniquely mapped reads in [data_dir]/SC_109_adaptive.r_2.bam: 27268150
+#Total length of uniquely mapped reads in [data_dir]/SC_109_adaptive.r_3.bam: 685166
+#Total length of uniquely mapped reads in [data_dir]/SC_109_adaptive.t_1.bam: 4079494
+#Total length of uniquely mapped reads in [data_dir]/SC_109_adaptive.t_2.bam: 14028753
+#Total length of uniquely mapped reads in [data_dir]/SC_109_adaptive.t_3.bam: 326544
+#Total length of uniquely mapped reads in [data_dir]/SC_109_full.r_1.bam: 2787054
+#Total length of uniquely mapped reads in [data_dir]/SC_109_full.r_2.bam: 9592993
+#Total length of uniquely mapped reads in [data_dir]/SC_109_full.r_3.bam: 330500
+#Total length of uniquely mapped reads in [data_dir]/SC_109_full.t_1.bam: 1620650
+#Total length of uniquely mapped reads in [data_dir]/SC_109_full.t_2.bam: 5695489
+#Total length of uniquely mapped reads in [data_dir]/SC_109_full.t_3.bam: 157145
+#Total length of uniquely mapped reads in [data_dir]/SC_112_adaptive.r_1.bam: 2822291
+#Total length of uniquely mapped reads in [data_dir]/SC_112_adaptive.r_2.bam: 6168271
+#Total length of uniquely mapped reads in [data_dir]/SC_112_adaptive.r_3.bam: 269199
+#Total length of uniquely mapped reads in [data_dir]/SC_112_adaptive.t_1.bam: 2300500
+#Total length of uniquely mapped reads in [data_dir]/SC_112_adaptive.t_2.bam: 4934001
+#Total length of uniquely mapped reads in [data_dir]/SC_112_adaptive.t_3.bam: 213813
+#Total length of uniquely mapped reads in [data_dir]/SC_112_full.r_1.bam: 2124968
+#Total length of uniquely mapped reads in [data_dir]/SC_112_full.r_2.bam: 4902040
+#Total length of uniquely mapped reads in [data_dir]/SC_112_full.r_3.bam: 181712
+#Total length of uniquely mapped reads in [data_dir]/SC_112_full.t_1.bam: 1817013
+#Total length of uniquely mapped reads in [data_dir]/SC_112_full.t_2.bam: 4277183
+#Total length of uniquely mapped reads in [data_dir]/SC_112_full.t_3.bam: 162480

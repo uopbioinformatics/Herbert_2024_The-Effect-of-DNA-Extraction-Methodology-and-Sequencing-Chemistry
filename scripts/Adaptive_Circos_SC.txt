@@ -1,0 +1,91 @@
+[data_dir]# Create Circos plot of S. cerevisiae genome from adaptive data
+
+# Map data from adaptive sampling runs of LSK109 and LSK112 to S. cerevisiae reference genome (GCF_000146045.2)
+
+#First combine triplicate fastq files for each LSK109 and LSK112 adaptive run that map to S. cerevisiae into a single fastq file before following below
+
+#LSK112
+
+#Map reads to S. cerevisiae genome as per manuscript 
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Adaptive_0003.filtered.bam | cut -f1 | sort | uniq > S.cervisiae_A_112_3.txt
+
+#Subset fastq file
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Adaptive_0003.fq.gz S.cervisiae_A_112_3.txt > S.cervisiae_A_112_3.subseq.fastq
+
+#Combine all files
+cat [data_dir]/S.cervisiae_A_112_1.subseq.fastq [data_dir]/S.cervisiae_A_112_2.subseq.fastq [data_dir]/S.cervisiae_A_112_3.subseq.fastq > S.cerevisiae_A_112.fastq
+
+#LSK109
+
+#Map reads to S. cerevisiae genome as per manuscript 
+
+#Get all mapped read IDs
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Adaptive_0003.filtered.bam | cut -f1 | sort | uniq > S.cervisiae_A_109_3.txt
+
+#Subset fastq file
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Adaptive_0003.fq.gz S.cervisiae_A_109_3.txt > S.cervisiae_A_109_3.subseq.fastq
+
+#Combine all files
+cat [data_dir]/S.cervisiae_A_109_1.subseq.fastq [data_dir]/S.cervisiae_A_109_2.subseq.fastq [data_dir]/S.cervisiae_A_109_3.subseq.fastq > S.cersisiae_A_109.fastq
+
+# LSK109
+minimap2 -a -x map-ont GCF_000146045.2_Saccharomyces_cerevisiae.fasta S.cersisiae_A_109.fastq | samtools sort -T tmp -o S.cerevisiae_A_109.bam
+
+# LSK112
+minimap2 -a -x map-ont GCF_000146045.2_Saccharomyces_cerevisiae.fasta S.cerevisiae_A_112.fastq | samtools sort -T tmp -o S.cerevisiae_A_112.bam
+
+# Extract coverage info
+
+bedtools genomecov -ibam S.cerevisiae_A_109.bam -bga > S.cerevisiae_A_109.bed
+
+awk 'BEGIN{FS="\t"; OFS="\t"}; ($4 >= 5) {print}' S.cerevisiae_A_109.bed > S.cerevisiae_A_109.f.bed
+
+# work out average depth
+
+samtools depth S.cerevisiae_A_109.bam > S.cerevisiae_A_109_depth.txt
+
+#112
+
+bedtools genomecov -ibam S.cerevisiae_A_112.bam -bga > S.cerevisiae_A_112.bed
+
+# work out average depth
+
+samtools depth S.cerevisiae_A_112.bam > S.cerevisiae_A_112_depth.txt
+
+# Get GC content
+
+# LSK109
+
+minimap2 -a -x map-ont GCF_000146045.2_Saccharomyces_cerevisiae.fasta S.cersisiae_A_109.fastq | samtools sort -T tmp -o SC_109.bam
+
+bedtools genomecov -ibam SC_109.bam -bga > SC_109.bed
+
+bedtools nuc -fi GCF_000146045.2_Saccharomyces_cerevisiae.fasta SC_109.bed > SC_109_gc.bed
+
+bedtools nuc -fi GCF_000146045.2_Saccharomyces_cerevisiae.fasta -bed <(bedtools makewindows -g <(awk '{print $1"\t"$2}' GCF_000146045.2_Saccharomyces_cerevisiae.fasta.fai) -w 1000) > SC_109_gc_windows.bed
+
+# LSK112
+
+minimap2 -a -x map-ont GCF_000146045.2_Saccharomyces_cerevisiae.fasta S.cersisiae_A_112.fastq | samtools sort -T tmp -o SC_109.bam
+
+bedtools genomecov -ibam SC_112.bam -bga > SC_112.bed
+
+bedtools nuc -fi GCF_000146045.2_Saccharomyces_cerevisiae.fasta SC_112.bed > SC_112_gc.bed
+
+bedtools nuc -fi GCF_000146045.2_Saccharomyces_cerevisiae.fasta -bed <(bedtools makewindows -g <(awk '{print $1"\t"$2}' GCF_000146045.2_Saccharomyces_cerevisiae.fasta.fai) -w 1000) > SC_gc_windows.bed
+
+## Create tsv file for Circos plot from reference genome
+
+# starting with your_genome.fasta, index it to get the lengths
+
+samtools faidx GCF_000146045.2_Saccharomyces_cerevisiae.fasta
+
+# then add a header:
+
+cat <(echo -e "chromosome\tsize\tnot_needed1\tnot_needed2\tnot_needed3") GCF_000146045.2_Saccharomyces_cerevisiae.fasta.fai > s.cerevisiae_ref.tsv
+
+# Then use RmD script to create Circos Plot
+

@@ -1,0 +1,378 @@
+---
+title: "Adaptive Analysis of *S. cerevisiae* using LSK109 and LSK112"
+author: "Jo Herbert"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 4
+    number_sections: no
+    latex_engine: xelatex
+  rmarkdown::pdf_document:
+    extra_dependencies: float
+    toc: yes
+html_document:
+  toc: yes
+toc_float: yes
+---
+
+# Description
+
+This script uses data from the adaptive sampling sequencing runs of the ZMC metagenomic DNA to create a Circos plot of the Saccharomyces cerevisiae genome, which was enriched within this study, with GC content plotted and the coverage of enriched reads from both runs that used LSK109 and LSK112 against the reference used.
+
+# Data
+
+Data used:
+- 20220719_N2_EXP019_LSK112_Adaptive
+- 20220728_N2_EXP019_LSK109_Adaptive
+
+# Setup
+
+First let us set up the R environment:
+
+## Global options
+
+```{r global options, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      error = FALSE,
+                      eval = TRUE,
+                      dev = c('pdf', 'png'),
+                      width = 60,
+                      fig.align = 'center', 
+                      fig.height = 10, 
+                      fig.width = 10, 
+                      fig.dpi = 300,
+                      fig.pos = "!H",
+                      dpi = 300,
+                      out.extra = "",
+                      message = FALSE, 
+                      cache = FALSE,
+                      pdf.options(encoding = "ISOLatin9.enc"),
+                      fig.path='figs/') 
+```
+
+## Library 
+
+```{r Library}
+## Load the libraries
+library(circlize)
+library(dplyr)
+library(GenomicRanges)
+library(stringr)
+library(ComplexHeatmap)
+```
+
+## Parameters
+
+``` {r Parameters}
+
+data_dir = "[data_dir]/"
+
+```
+
+## Load Data
+Next we load in the data:
+
+```{r Load_data}
+
+ideo_test <- read.table("s.cerevisiae_ref.tsv", header = TRUE)
+
+gc_content_data <- read.table("SC_gc_windows.bed", header = TRUE)
+
+adapt_cere1 <- read.csv("8_hour_subsample_bases.csv")
+
+```
+
+## Process GC Content Data
+
+```{r GC_content}
+
+#Process gc data
+gc_content_data <- gc_content_data[, -c(4:5)] 
+gc_content_data <- gc_content_data[, -c(5:10)] 
+
+#Create new column to have start and end
+gc_content_data$X1000 <- gc_content_data$X1000-1
+
+#Change column names
+gc_data <- gc_content_data
+names(gc_data)[1] <- "chr"
+names(gc_data)[2] <- "start"
+names(gc_data)[3] <- "end"
+names(gc_data)[4] <- "gc_value"
+
+#Make values numeric
+gc_data$gc <- as.numeric(gc_data$gc)
+gc_data$start <- as.numeric(gc_data$start)
+
+```
+
+## Process Coverage Data
+
+This takes the coverage per base pair and averages them into blocks of 1000 so they can be plotted on the Circos plot.
+
+```{r Process_coverage_data}
+
+#Read in Coverage
+coverage_data <- read.table("SC_109.bed", header = TRUE)
+
+# Function to generate coverage data for a contig
+generate_coverage_data <- function(contig_name, contig_length) {
+  data.frame(
+    chromosome = rep(contig_name, contig_length),
+    position = seq(1, contig_length),
+    coverage = rpois(contig_length, lambda = 20)
+  )
+}
+
+# Function to split coverage data into blocks of 1000
+split_coverage_data <- function(coverage_data) {
+  coverage_data %>%
+    group_by(chromosome, block = ceiling(position / 1000)) %>%
+    summarise(mean_coverage = mean(coverage)) %>%
+    mutate(
+      block = block * 1000,
+      end = block + 999
+    ) %>%
+    select(chromosome, block, end, mean_coverage)
+}
+
+# Contig data
+contigs <- list(
+  NC_001133.9 = 230218,
+  NC_001134.8 = 813184,
+  NC_001135.5 = 316620,
+  NC_001136.10 = 1531933,
+  NC_001137.3 = 576874,
+  NC_001138.5 = 270161,
+  NC_001139.9 = 1090940,
+  NC_001140.6 = 562643,
+  NC_001141.2 = 439888,
+  NC_001142.9 = 745751,
+  NC_001143.9 = 666816,
+  NC_001144.5 = 1078177,
+  NC_001145.3 = 924431,
+  NC_001146.8 = 784333,
+  NC_001147.6 = 1091291,
+  NC_001148.4 = 948066,
+  NC_001224.1 = 85779
+)
+
+# Generate and split coverage data for each contig
+split_data_all <- lapply(names(contigs), function(contig_name) {
+  coverage_data <- generate_coverage_data(contig_name, contigs[[contig_name]])
+  split_coverage_data(coverage_data)
+})
+
+# Combine the results into a single dataframe
+split_data_all_109 <- do.call(rbind, split_data_all)
+
+#Read in Coverage
+coverage_data <- read.table("SC_112.bed", header = TRUE)
+
+# Function to generate coverage data for a contig
+generate_coverage_data <- function(contig_name, contig_length) {
+  data.frame(
+    chromosome = rep(contig_name, contig_length),
+    position = seq(1, contig_length),
+    coverage = rpois(contig_length, lambda = 20)
+  )
+}
+
+# Function to split coverage data into blocks of 1000
+split_coverage_data <- function(coverage_data) {
+  coverage_data %>%
+    group_by(chromosome, block = ceiling(position / 1000)) %>%
+    summarise(mean_coverage = mean(coverage)) %>%
+    mutate(
+      block = block * 1000,
+      end = block + 999
+    ) %>%
+    select(chromosome, block, end, mean_coverage)
+}
+
+# Contig data
+contigs <- list(
+  NC_001133.9 = 230218,
+  NC_001134.8 = 813184,
+  NC_001135.5 = 316620,
+  NC_001136.10 = 1531933,
+  NC_001137.3 = 576874,
+  NC_001138.5 = 270161,
+  NC_001139.9 = 1090940,
+  NC_001140.6 = 562643,
+  NC_001141.2 = 439888,
+  NC_001142.9 = 745751,
+  NC_001143.9 = 666816,
+  NC_001144.5 = 1078177,
+  NC_001145.3 = 924431,
+  NC_001146.8 = 784333,
+  NC_001147.6 = 1091291,
+  NC_001148.4 = 948066,
+  NC_001224.1 = 85779
+)
+
+# Generate and split coverage data for each contig
+split_data_all <- lapply(names(contigs), function(contig_name) {
+  coverage_data <- generate_coverage_data(contig_name, contigs[[contig_name]])
+  split_coverage_data(coverage_data)
+})
+
+# Combine the results into a single dataframe
+split_data_all_112 <- do.call(rbind, split_data_all)
+
+```
+
+## Plot Figure 5: Circos Plot of Adaptive Read Coverage and GC content of *S. cerevisiae* using LSK109 and LSK112
+
+Plot *S. cerevisiae* genome (GCF_000146045.2), GC-content and coverage (calulated using bedtools) data from LSK109 and LSK112 data for adaptive sampling.
+
+```{r Figure_5_SC_Circos_gc_cov, fig.height= 10, fig.width= 15}
+
+#Start genome Circos plot
+
+#Clear plot
+circos.clear()
+
+#Set limits
+col_text <- "grey"
+circos.par("track.height"=0.8, gap.degree=5, cell.padding=c(0, 0, 0, 0))
+circos.initialize(factors=ideo_test$chromosome, xlim=matrix(c(rep(0, 17), ideo_test$size), ncol=2))
+
+# Plot genome track
+circos.track(ylim=c(0, 1), panel.fun=function(x, y) {
+  chr=CELL_META$sector.index
+  xlim=CELL_META$xlim
+  ylim=CELL_META$ylim
+  circos.text(mean(xlim), mean(ylim), chr, cex=0.02, col="#5e4fa2", 
+              facing="bending.inside", niceFacing=TRUE)
+}, bg.col="#5e4fa2", bg.border=F, track.height=0.1)
+
+# genomes x axis (tick marks)
+brk <- c(0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50, 52.5, 55, 57.5, 60)*10^5
+circos.track(track.index = get.current.track.index(), panel.fun=function(x, y) {
+  circos.axis(h="top", major.at=brk, labels=round(brk/10^5, 1), labels.cex=0.3, 
+              col="black", labels.col="black", lwd=0.7, labels.facing="clockwise")
+}, bg.border=F)
+
+#Plot GC content
+
+#Create seq for colour palette
+seq <- seq(min(gc_data$gc), max(gc_data$gc), length.out = 5)
+
+#Create colour function palette
+col_fun <- colorRamp2(seq, c("white", "#fffebf", "#fdae61", "#9c163d", "#5e4fa2"))
+
+# Create heatmap of GC content
+circos.genomicHeatmap(gc_data, connection_height = NULL, numeric.column = "gc", col = col_fun, na_col = "grey", heatmap_height=0.1)
+
+coverage_data <- read.table("SC_109.bed", header = TRUE)
+
+# Plot coverage as line graph
+circos.genomicTrack(data=coverage_data, panel.fun=function(region, value, ...) {
+  circos.genomicLines(region, value, type="l", col="#66c3a5", lwd=0.3)
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=100, y1=100, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=300, y1=300, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+}, track.height=0.18, bg.border=F)
+circos.yaxis(at=c(100, 300), labels.cex=0.25, lwd=0, tick.length=0, labels.col=col_text, col="black")
+
+coverage_data_112 <- read.table("SC_112.bed", header = TRUE)
+
+# Plot coverage as line graph
+circos.genomicTrack(data=coverage_data_112, panel.fun=function(region, value, ...) {
+  circos.genomicLines(region, value, type="l", col="#abdda4", lwd=0.3)
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=100, y1=100, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=300, y1=300, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+  circos.segments(x0=0, x1=max(ideo_test$size), y0=500, y1=500, lwd=0.4, lty="11", col="grey90")
+}, track.height=0.18, bg.border=F)
+circos.yaxis(at=c(100, 300), labels.cex=0.25, lwd=0, tick.length=0, labels.col=col_text, col="black")
+
+lgd = Legend(col_fun = col_fun, title = "GC Content Score")
+
+lgd_list_vertical = packLegend(lgd)
+draw(lgd_list_vertical, x = unit(2, "cm"), y = unit(4, "cm"), just = c("left", "bottom"))
+
+lgd = Legend(at = c("LSK109","LSK112"), title = "Sequencing Chemistry", legend_gp = gpar(fill = c("#66c3a5","#abdda4")))
+
+lgd_list_vertical = packLegend(lgd)
+draw(lgd_list_vertical, x = unit(2, "cm"), y = unit(2, "cm"), just = c("left", "bottom"))
+
+```
+
+## Boxplot of no. bases mapping to *S. cerevisiae* within LSK109 and LSK112 for Full and Adaptive
+
+```{r Figure_5_Adaptive_Plot_Circos_Box, fig.height= 10, fig.width= 15}
+
+# Modify the data
+adapt_cere1$Seq <- factor(adapt_cere1$Seq, levels = c("109", "112"), 
+                  labels = c("LSK109", "LSK112"))
+adapt_cere1$data_type <- factor(adapt_cere1$data_type, levels = c("raw", "trim"), 
+                         labels = c("Raw", "Trimmed"))
+adapt_cere1$Run = factor(adapt_cere1$Run, 
+                        levels=c("Full","Adaptive"))
+
+adapt_cere1$Seq <- as.factor(adapt_cere1$Seq)
+
+#Run stats test to compare full v adaptive
+stat.test <- adapt_cere1 %>%
+  group_by(Seq, data_type) %>%
+  t_test(Percentage ~ Run) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+stat.test
+
+
+#Plot data
+p <- ggplot(adapt_cere1, aes(x=Run, y=Percentage, color= data_type)) +
+  geom_boxplot() + 
+  theme_bw() + 
+  ylab("Percentage of bases mapped (%)") + 
+  xlab("Library") + 
+  theme(axis.text.x = element_text(size=10, angle= 45, vjust = 0.6)) + 
+  theme(legend.position = "right")
+
+bxp1 <- p + 
+  geom_jitter(color="black", size=1, alpha=0.9) +
+  scale_color_manual(values=c("#5e4fa1", "#abdda3"), name="Data", labels= c("Raw", "Trimmed")) + 
+  facet_wrap(~ Seq + data_type, nrow=1, scales = 'free') +
+  labs(tag="B")
+
+#Add stats
+stat.test <- stat.test %>% add_xy_position(x = "Run")
+
+bxp1 + stat_pvalue_manual(stat.test, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE)
+
+stat.test
+
+```
+

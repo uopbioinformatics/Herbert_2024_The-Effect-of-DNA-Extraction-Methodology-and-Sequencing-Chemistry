@@ -1,0 +1,1440 @@
+---
+title: "DNA Kit & Sequencing Chemistry Comparison Analysis"
+author: "Jo Herbert"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 4
+    number_sections: no
+    latex_engine: xelatex
+  rmarkdown::pdf_document:
+    extra_dependencies: float
+    toc: yes
+html_document:
+  toc: yes
+toc_float: yes
+---
+
+# Setup
+
+First let us set up the R environment:
+
+## Global options
+
+```{r global options, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      error = FALSE,
+                      eval = TRUE,
+                      dev = c('pdf', 'png', 'jpeg', 'tiff'),
+                      width = 60,
+                      fig.align = 'center', 
+                      fig.height = 10, 
+                      fig.width = 10, 
+                      fig.dpi = 300,
+                      fig.pos = "!H",
+                      dpi = 300,
+                      out.extra = "",
+                      message = FALSE, 
+                      cache = FALSE,
+                      pdf.options(encoding = "ISOLatin9.enc"),
+                      fig.path='figs/') 
+```
+
+## Library 
+
+```{r Library}
+## Load the libraries
+library("phyloseq")
+library("ggplot2")
+library("ape")
+library("vegan")
+library("gridExtra")
+library("RColorBrewer")
+library("ggpubr")
+library("rstatix")
+library("forcats")
+library("ggforce")
+library("ggpubr")
+library("readr")
+library("dplyr")
+library(pafr, quietly=TRUE)
+library("viridis")
+library("grid")
+library("gridExtra")
+library("cowplot")
+library("scales")
+library("tidyr")
+library("patchwork")
+library("corrplot")
+```
+
+## Parameters
+
+``` {r Parameters}
+
+DATA_DIR = "[data_dir]/"
+
+```
+
+## Load Data
+Next we load in the data:
+
+```{r Load_data}
+
+otu <- read.csv(paste0(DATA_DIR,"EXP005_112_emu_otu.csv"))
+
+BM_otu <- read.csv(paste0(DATA_DIR,"OTU_BM_emu.csv"))
+
+tax <- read.csv(paste0(DATA_DIR,"emu_TAX_TABLE.csv"))
+                
+sample_data <- read.csv(paste0(DATA_DIR, "Metadata_MB.csv"))
+
+expected <- read.csv(paste0(DATA_DIR, "16S_Expected_Abundance.csv"))
+
+ad_ex <- read.csv(paste0(DATA_DIR, "Expected_Copy_data.csv"))
+
+ad <- read.csv(paste0(DATA_DIR, "adaptive_reads_percent_kraken.csv"))
+
+assem_data <- read.csv(paste0(DATA_DIR,"assembly_metadata.csv"))
+
+ref_assem <- read.csv(paste0(DATA_DIR,"ref_v_assembly_mb_gc.csv"))
+
+chi_112_p <- read.csv(paste0(DATA_DIR, "chi_112_percent.csv"))
+
+chi_109_p <- read.csv(paste0(DATA_DIR, "chi_109_percent.csv"))
+
+chi_109_c <- read.csv(paste0(DATA_DIR, "chi_109_counts.csv"))
+
+chi_112_c <- read.csv(paste0(DATA_DIR, "chi_112_counts.csv"))
+
+chi_109_cn <- read.csv(paste0(DATA_DIR, "chi_109_copy_number.csv"))
+
+chi_112_cn <- read.csv(paste0(DATA_DIR, "chi_112_copy_number.csv"))
+
+chi_109_112 <- read.csv(paste0(DATA_DIR,"wgs_count_chi.csv"))
+
+adapt_cere1 <- read.csv(paste0(DATA_DIR,"8_hour_subsample_bases_redone.csv"))
+                
+```
+
+# Section 1: 16S rRNA gene analysis for kit comparison
+
+## Process files for Phyloseq
+
+```{r Process_Physeq_Data}
+
+#join BM with other kits (CEI_JH_EXP005 and CEI_JH_EXP006)
+otu <- inner_join(BM_otu, otu, by = "tax_id")
+
+#Remove NAs
+otu[is.na(otu)] <- 0
+
+#make column IDs into rownames
+rownames(otu) <- otu[,1]
+otu[,1] <- NULL
+
+#convert otu table into a matrix
+otu1 <- as.matrix(otu, rownames.force = NA)
+
+#make column IDs into rownames
+rownames(tax) <- tax[,1]
+tax[,1] <- NULL
+
+#make tax table into a matrix
+tax1 <- as.matrix(tax, rownames.force = NA)
+
+#load data to phyloseq (tell phyloseq what the otu and tax tables are)
+OTU = otu_table(otu1, taxa_are_rows = TRUE)
+TAX = tax_table(tax1)
+
+```
+
+## Create Phyloseq object
+
+```{r Create_Physeq_Object}
+
+#create phyloseq object
+physeq = phyloseq(OTU, TAX)
+
+sample_sums <- sample_sums(physeq)
+
+sample_sums
+
+```
+
+## Add sample metadata
+
+```{r Sample_Metadata}
+
+#make column into rownames
+rownames(sample_data) <- sample_data[,1]
+sample_data[,1] <- NULL
+
+#change seq number to a character
+sample_data$Seq <- as.character(sample_data$Seq)
+sample_data$Rep <- as.character(sample_data$Rep)
+
+#read into phyloseq as sample data
+sampledata = sample_data(data.frame(sample_data))
+
+#merge sample data and phyloseq object to make new object
+physeq1 = merge_phyloseq(physeq, sampledata)
+
+```
+
+## Visualise counts for each kit
+
+```{r Counts, fig.height=10,fig.width=15}
+
+p <- plot_bar(physeq1, fill = "superkingdom")
+
+p + geom_bar(aes(color=superkingdom, fill=superkingdom), stat="identity", position="stack") +
+      theme_bw() +
+      ylab("No. OTUs") +
+      xlab("DNA Extraction Kit") +
+      facet_wrap(~ Kit, scales="free", nrow = 2) +
+      scale_fill_brewer(palette = "Paired") +
+      scale_color_brewer(palette = "Paired", guide = guide_legend(label.theme = element_text(angle = 0, face = "italic"))) +
+      scale_x_discrete(labels=c('1', '2', '3')) +
+      theme(text = element_text(size = 15), legend.position = "none")
+
+```
+
+## Rarefy to lowest sample
+
+```{r Rarefy_Physeq_Object, fig.height=10,fig.width=15}
+
+set.seed(sample.int(10000, 1))
+
+#rarefy to lowest sample
+physeq2 <- rarefy_even_depth(
+  physeq = physeq1,
+  sample.size = min(26903),  # Minimum sample sum as the rarefaction depth
+  rngseed = FALSE,  # Set to TRUE if you want to set a specific seed for reproducibility
+  replace = TRUE,   # Whether to sample with replacement (TRUE) or without replacement (FALSE)
+  trimOTUs = TRUE,  # Remove OTUs with sums of zero after sampling
+  verbose = TRUE    # Print progress messages
+)
+
+sample_sums <- sample_sums(physeq1)
+
+# Print the sums
+print(sample_sums)
+
+sample_sums_r <- sample_sums(physeq2)
+
+# Print the sums
+print(sample_sums_r)
+
+p <- plot_bar(physeq2, fill = "superkingdom")
+
+p + geom_bar(aes(color=superkingdom, fill=superkingdom), stat="identity", position="stack") +
+      theme_bw() +
+      ylab("No. OTUs") +
+      xlab("DNA Extraction Kit") +
+      facet_wrap(~ Seq + Kit, scales="free", nrow = 2) +
+      scale_fill_brewer(palette = "Paired") +
+      scale_color_brewer(palette = "Paired", guide = guide_legend(label.theme = element_text(angle = 0, face = "italic"))) +
+      scale_x_discrete(labels=c('1', '2', '3')) +
+      theme(text = element_text(size = 15), legend.position = "none")
+
+```
+
+## Figure S4: Plot rarefication curves before and after rarefying
+
+```{r Figure_S4_rarefication, fig.height=8,fig.width=14}
+
+#????
+set.seed(42)
+
+#not sure what any of this does tbh but it works soooooo
+calculate_rarefaction_curves <- function(physeq1, measures, depths) {
+  require('plyr') # ldply
+  require('reshape2') # melt
+  
+estimate_rarified_richness <- function(physeq1, measures, depth) {
+    if(max(sample_sums(physeq1)) < depth) return()
+    psdata <- prune_samples(sample_sums(physeq1) >= depth, physeq1)
+    
+rarified_physeq1 <- rarefy_even_depth(physeq1, depth, verbose = FALSE)
+    
+alpha_diversity <- estimate_richness(rarified_physeq1, measures = measures)
+
+# as.matrix forces the use of melt.array, which includes the Sample names (rownames)
+    
+molten_alpha_diversity <- melt(as.matrix(alpha_diversity), varnames = c('Sample', 'Measure'), value.name = 'Alpha_diversity')
+    molten_alpha_diversity
+  }
+  
+names(depths) <- depths # this enables automatic addition of the Depth to the output by ldply
+rarefaction_curve_data <- ldply(depths, estimate_rarified_richness, physeq1 = physeq1, measures = measures, .id = 'Depth', .progress = ifelse(interactive(), 'text', 'none'))
+  
+# convert Depth from factor to numeric
+rarefaction_curve_data$Depth <- as.numeric(levels(rarefaction_curve_data$Depth))[rarefaction_curve_data$Depth]
+  rarefaction_curve_data
+}
+
+rarefaction_curve_data <- calculate_rarefaction_curves(physeq1, c('Observed', 'Shannon', 'Simpson', 'Chao1'), rep(c(1, 10, 100, 1000, 1:100 * 10000), each = 10))
+summary(rarefaction_curve_data)
+
+#####
+
+rarefaction_curve_data_summary <- ddply(rarefaction_curve_data, c('Depth', 'Sample', 'Measure'), summarise, Alpha_diversity_mean = mean(Alpha_diversity), Alpha_diversity_sd = sd(Alpha_diversity))
+
+#####
+
+rarefaction_curve_data_summary_verbose <- merge(rarefaction_curve_data_summary, data.frame(sample_data(physeq1)), by.x = 'Sample', by.y = 'row.names')
+
+#####
+
+# Define the number of colors you want
+nb.cols <- 16
+mycolors <- colorRampPalette(brewer.pal(11, "Paired"))(nb.cols)
+
+#make the graph!
+rarefy1 <- ggplot(
+  data = rarefaction_curve_data_summary_verbose,
+  mapping = aes(
+    x = Depth,
+    y = Alpha_diversity_mean,
+    ymin = Alpha_diversity_mean - Alpha_diversity_sd,
+    ymax = Alpha_diversity_mean + Alpha_diversity_sd,
+    colour = Sample,
+    group = Sample
+  )
+) +
+  geom_line() +
+  geom_pointrange() +
+  facet_wrap(
+    facets = ~ Measure,
+    scales = 'free_y'
+  ) +
+  theme_bw() +
+  scale_color_manual(values = mycolors) +
+  ylab("Alpha Diversity Mean") +
+  labs(tag = "A") +
+  theme(
+    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 13),
+    strip.text = element_text(size = 13)
+  )
+
+
+#rename your phyloseq object to the one in the script
+psdata <- physeq2
+
+#????
+set.seed(42)
+
+#not sure what any of this does tbh but it works soooooo
+calculate_rarefaction_curves <- function(psdata, measures, depths) {
+  require('plyr') # ldply
+  require('reshape2') # melt
+  
+  estimate_rarified_richness <- function(psdata, measures, depth) {
+    if(max(sample_sums(psdata)) < depth) return()
+    psdata <- prune_samples(sample_sums(psdata) >= depth, psdata)
+    
+    rarified_psdata <- rarefy_even_depth(psdata, depth, verbose = FALSE)
+    
+    alpha_diversity <- estimate_richness(rarified_psdata, measures = measures)
+    
+    # as.matrix forces the use of melt.array, which includes the Sample names (rownames)
+    molten_alpha_diversity <- melt(as.matrix(alpha_diversity), varnames = c('Sample', 'Measure'), value.name = 'Alpha_diversity')
+    
+    molten_alpha_diversity
+  }
+  
+  names(depths) <- depths # this enables automatic addition of the Depth to the output by ldply
+  rarefaction_curve_data <- ldply(depths, estimate_rarified_richness, psdata = psdata, measures = measures, .id = 'Depth', .progress = ifelse(interactive(), 'text', 'none'))
+  
+  # convert Depth from factor to numeric
+  rarefaction_curve_data$Depth <- as.numeric(levels(rarefaction_curve_data$Depth))[rarefaction_curve_data$Depth]
+  
+  rarefaction_curve_data
+}
+
+rarefaction_curve_data <- calculate_rarefaction_curves(psdata, c('Observed', 'Shannon', 'Simpson', 'Chao1'), rep(c(1, 10, 100, 1000, 1:100 * 10000), each = 10))
+summary(rarefaction_curve_data)
+
+#####
+
+rarefaction_curve_data_summary <- ddply(rarefaction_curve_data, c('Depth', 'Sample', 'Measure'), summarise, Alpha_diversity_mean = mean(Alpha_diversity), Alpha_diversity_sd = sd(Alpha_diversity))
+
+#####
+
+rarefaction_curve_data_summary_verbose <- merge(rarefaction_curve_data_summary, data.frame(sample_data(psdata)), by.x = 'Sample', by.y = 'row.names')
+
+#####
+
+#make the graph!
+rarefy2 <- ggplot(
+  data = rarefaction_curve_data_summary_verbose,
+  mapping = aes(
+    x = Depth,
+    y = Alpha_diversity_mean,
+    ymin = Alpha_diversity_mean - Alpha_diversity_sd,
+    ymax = Alpha_diversity_mean + Alpha_diversity_sd,
+    colour = Sample,
+    group = Sample
+  )
+) +
+  geom_line() +
+  geom_pointrange() +
+  facet_wrap(
+    facets = ~ Measure,
+    scales = 'free_y'
+  ) +
+  theme_bw() +
+  scale_color_manual(values = mycolors) +
+  ylab("Alpha Diversity Mean") +
+  labs(tag = "B") +
+  theme(
+    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 13), 
+    strip.text = element_text(size = 13)
+  )
+
+grid.arrange(rarefy1, rarefy2, nrow= 2)
+
+```
+
+## Create glom physeq object for alpha and beta diversity
+
+```{r Glom_Physeq_Data}
+
+#physeq_glom <- tax_glom(physeq2, taxrank = "Species")
+
+```
+
+## Plot relative abundance (C)
+
+```{r Relative_Abundance_C}
+
+#keep most abundant genus (top 8)
+genus.sum = tapply(taxa_sums(physeq2), tax_table(physeq2)[, "genus"], sum, na.rm=TRUE)
+
+top8genus = names(sort(genus.sum, TRUE))[1:8]
+
+physeq3 = prune_taxa((tax_table(physeq2)[, "genus"] %in% top8genus), physeq2)
+
+#Transform to percentage for relative abundance (%)
+ps <- transform_sample_counts(physeq3,function(x) x / sum(x) * 100)
+
+## plot bar chart for relative abundance ##
+p <- plot_bar(ps, fill = "genus")
+
+ra <- p + geom_bar(aes(color=genus, fill=genus), stat="identity", position="stack") +
+      theme_bw() +
+      ylab("") +
+      xlab("") +
+      facet_wrap(~ Kit, scales="free", nrow = 1) +
+      scale_fill_brewer(palette = "Paired") +
+      scale_color_brewer(palette = "Paired", guide = guide_legend(label.theme = element_text(angle = 0, face = "italic"))) +
+      scale_x_discrete(labels=c('1', '2', '3')) +
+      theme(text = element_text(size = 10))
+
+#plot 16S expected abundance for ZMC
+graph <- ggplot(expected, aes(x= Sample, y= Relative_Abundance, color=Genus, fill=Genus)) +
+      geom_bar(stat="identity", position="stack") +
+      theme_bw() +
+      ylab("Relative Abundance (%)") +
+      xlab("") +
+      scale_fill_brewer(palette = "Paired") +
+      scale_color_brewer(palette = "Paired", guide = guide_legend(label.theme = element_text(angle = 0, face = "italic"))) +
+      facet_wrap(~ Sample)
+  
+ra1 <- graph + theme(text = element_text(size = 10), legend.position = "none")
+
+
+#add two graphs panelled together
+c <- ggarrange(ra1,ra, nrow=1, common.legend = TRUE, legend="right", labels = c("C"), widths = c(0.5, 2))
+
+```
+
+## Chi-squared analysis of kits vs expected and each other
+
+```{r Chi_Squared_Analysis_16S}
+
+#Get count data for each OTU within rarefied phyloseq object
+count_data <- as.data.frame(otu_table(physeq2))
+
+#Create columns of means across replicates for each kit
+count_data$BM_mean <- rowMeans(count_data[, c("BM_1", "BM_2", "BM_3")])
+
+count_data$PS_mean <- rowMeans(count_data[, c("PS_1", "PS_2")])
+
+count_data$AP_mean <- rowMeans(count_data[, c("AP_1", "AP_2", "AP_3")])
+
+count_data$PF_mean <- rowMeans(count_data[, c("PF_2", "PF_3")])
+
+count_data$MB_mean <- rowMeans(count_data[, c("MB_1", "MB_2", "MB_3")])
+
+#Collate mean counts of each kit into one dataframe
+mean_counts <- count_data[, c("AP_mean", "BM_mean", "PF_mean", "PS_mean", "MB_mean")]
+
+# Extract row names
+row_names <- rownames(mean_counts)
+row_names1 <- rownames(tax)
+
+# Add a new column named 'Row_Header' and assign the row names to it
+mean_counts$tax_id <- row_names
+tax$tax_id <- row_names1
+
+#Join counts and taxa so the IDs can be aligned to appropriate organism
+mean_counts <- inner_join(mean_counts, tax, by = "tax_id")
+
+#Create list of Genus in Zymo control to subset counts
+zymo <- c("Bacillus", "Enterococcus", "Staphylococcus", "Salmonella", "Listeria", "Pseudomonas", "Limosilactobacillus", "Escherichia-Shigella")
+
+#Expected values taken by getting the percentage of total counts (25078)
+expected_no <- c(4363.572, 2482.722, 2532.878, 4614.352, 3535.998, 1053.276, 2608.112, 3887.09)
+
+
+#Create counts tables for each kit and add expected so they can be compared 
+
+#AP
+AP_counts <- aggregate(AP_mean ~ genus, data = mean_counts, FUN = sum)
+
+AP_counts <- subset(AP_counts, genus %in% zymo)
+
+AP_counts$Expected <- expected_no
+
+#BM
+BM_counts <- aggregate(BM_mean ~ genus, data = mean_counts, FUN = sum)
+
+BM_counts <- subset(BM_counts, genus %in% zymo)
+
+BM_counts$Expected <- expected_no
+
+#PF
+PF_counts <- aggregate(PF_mean ~ genus, data = mean_counts, FUN = sum)
+
+PF_counts <- subset(PF_counts, genus %in% zymo)
+
+PF_counts$Expected <- expected_no
+
+#PS
+PS_counts <- aggregate(PS_mean ~ genus, data = mean_counts, FUN = sum)
+
+PS_counts <- subset(PS_counts, genus %in% zymo)
+
+PS_counts$Expected <- expected_no
+
+#MB
+MB_counts <- aggregate(MB_mean ~ genus, data = mean_counts, FUN = sum)
+
+MB_counts <- subset(MB_counts, genus %in% zymo)
+
+MB_counts$Expected <- expected_no
+
+#Chi-square of each kit vs expected value
+
+#AP
+AP_counts1 = subset(AP_counts, select = -c(genus))
+chi_AP <- chisq.test(AP_counts1)
+
+chi_AP
+chi_AP$statistic
+chi_AP$p.value
+
+#BM
+BM_counts1 = subset(BM_counts, select = -c(genus))
+chi_BM <- chisq.test(BM_counts1)
+
+chi_BM
+chi_BM$statistic
+chi_BM$p.value
+
+#PF
+PF_counts1 = subset(PF_counts, select = -c(genus))
+chi_PF <- chisq.test(PF_counts1)
+
+chi_PF
+chi_PF$statistic
+chi_PF$p.value
+
+#PS
+PS_counts1 = subset(PS_counts, select = -c(genus))
+chi_PS <- chisq.test(PS_counts1)
+
+chi_PS
+chi_PS$statistic
+chi_PS$p.value
+
+#PS
+MB_counts1 = subset(MB_counts, select = -c(genus))
+chi_MB <- chisq.test(MB_counts1)
+
+chi_MB
+chi_MB$statistic
+chi_MB$p.value
+
+#chi-squared of 16S kits against each other 
+
+#Create new dataframe of above count tables so they can be compared using inner_join by genus
+AP_BM <- inner_join(AP_counts, BM_counts, by = "genus")
+PS_PF <- inner_join(PF_counts, PS_counts, by = "genus")
+all_kit <- inner_join(AP_BM, PS_PF, by = "genus")
+all_kit_MB <- inner_join(all_kit, MB_counts, by = "genus")
+
+#Calcuating Chi-squared value for kits against each other
+
+#Subset new dataframe to remove non-numeric columns
+all_kit_MB = subset(all_kit_MB, select = -c(Expected.x.x, Expected.x.y, Expected.y.y, Expected.y.x, genus, Expected))
+
+# Perform chi-squared test
+chisq.test(all_kit_MB)
+
+# Calculating percentage 
+
+# Identify numeric columns
+numeric_cols <- sapply(all_kit_MB, is.numeric)
+
+# Calculate percentage for each numeric value and Chi-squared of percentages
+percentage_df <- all_kit_MB
+percentage_df[, numeric_cols] <- (all_kit_MB[, numeric_cols] / 26903) * 100
+
+chisq <- chisq.test(percentage_df)
+
+#Work out how each kit contributes to the Chi-squared value
+round(chisq$expected,2)
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+
+corrplot(contrib, is.cor = FALSE)
+
+
+#Look at percentages for each kit 
+percentage_df$genus <- all_kit$genus
+
+#Look at dataset for percentages 
+percentage_df
+
+
+
+
+```
+## Bray Curtis dissimilarity analysis for each Kit
+
+```{r Bray_Curtis_analysis}
+
+# Create dataframe of counts of each organism within ZMC for each kit and expected
+data <- data.frame(
+  Bacillus = c(5177, 3166.333, 4251, 3278, 4363.572, 6193.667),
+  Enterococcus = c(3597.333, 2230, 2384, 2213.5, 2482.722, 1761.333),
+  `Escherichia-Shigella` = c(5417.667, 6446.333, 4325.5, 3992, 2532.878, 6461.667),
+  Limosilactobacillus = c(2429, 1625.333, 3363.5, 1100, 4614.352, 1564.667),
+  Listeria = c(552.667, 1597.333, 3368, 6245.5, 3535.998, 2087.333),
+  Pseudomonas = c(2244, 2846, 862, 1645.5, 1053.276, 1456.667),
+  Salmonella = c(5236, 5589, 3337.5, 3996.5, 2608.112, 5244.667),
+  Staphylococcus = c(1938, 2971.667, 4728.5, 4267.5, 3887.09, 1918.667)
+)
+
+# Assign row names
+rownames(data) <- c("AP", "BM", "PF", "PS", "Expected", "MB")
+
+# Calculate Bray-Curtis dissimilarity based on samples (rows)
+bray_curtis <- vegdist(data, method = "bray")
+
+# Convert to matrix
+bray_matrix <- as.matrix(bray_curtis)
+
+# Extract dissimilarity values between each group and the Expected
+dissimilarity_to_expected <- bray_matrix["Expected", c("AP", "BM", "PF", "PS", "MB")]
+
+# Print the dissimilarity values
+print(dissimilarity_to_expected)
+
+```
+
+## Calculate statistics for alpha diversity values (Observed, Shannon, Simpson and Chao1)
+
+```{r Alpha_Diversity_Stats}
+
+#Estimate alpha diversity stats for graphs
+alpha <- estimate_richness(physeq2, measures=c("Observed", "Simpson", "Shannon", "Chao1"))
+
+alpha <- rbind(alpha, NA)
+alpha <- rbind(alpha, NA)
+
+# Extract suffix from sample names
+Sample_names <- c("BM_3", "BM_2", "BM_1", "PS_2", "PF_3", "AP_1", "AP_2", "PS_1", "AP_3", "PF_2", "MB_3", "MB_2", "MB_1")
+
+Kit_names <- c("BM", "BM", "BM", "PS", "PF", "AP", "AP", "PS", "AP", "PF", "MB", "MB", "MB", "PF", "PS")
+
+Reps <- c("3", "2", "1", "2", "3", "1", "2", "1", "3", "2", "3", "2", "1", "1", "3")
+
+alpha$Kit <- Kit_names
+
+alpha$Rep <- Reps
+
+#Observed
+
+#observed_g <- alpha$Observed
+
+#observed_g <- c(observed_g, rep(NA, 2))
+
+#observed$Stat <- observed_g
+
+Observed = subset(alpha, select = -c(Chao1, se.chao1, Shannon, Simpson))
+
+stat.test_o <- Observed %>%
+  t_test(Observed ~ Kit, paired=T, detailed = T)  %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_o
+
+#Shannon
+
+#shannon_g <- alpha$Shannon
+
+#shannon_g <- c(shannon_g, rep(NA, 2))
+
+#shannon$Stat <- shannon_g 
+
+Shannon = subset(alpha, select = -c(Chao1, se.chao1, Observed, Simpson))
+
+stat.test_sh <- Shannon %>%
+  t_test(Shannon ~ Kit, paired=T, detailed = TRUE) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_sh
+
+#Simpson
+
+#simpson_g <- alpha$Simpson
+
+#simpson_g <- c(simpson_g, rep(NA, 2))
+
+#simpson$Stat <- simpson_g 
+
+Simpson = subset(alpha, select = -c(Chao1, se.chao1, Shannon, Observed))
+
+stat.test_si <- Simpson %>%
+  t_test(Simpson ~ Kit, paired=T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_si
+
+#Chao1
+
+#chao1_g <- alpha$Chao1
+
+#chao1_g <- c(chao1_g, rep(NA, 2))
+
+#chao1$Stat <- chao1_g 
+
+Chao1 = subset(alpha, select = -c(Observed, se.chao1, Shannon, Simpson))
+
+stat.test_ch <- Chao1 %>%
+  t_test(Chao1 ~ Kit, paired=T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_ch
+
+```
+
+## Alpha diversity values as a boxplot (A)
+
+```{r Alpha_Diversity_A}
+
+#Plot observed
+p <- ggplot(Observed, aes(x=Kit, y=Observed, color= Kit)) +
+      geom_boxplot() +
+      theme_bw() +
+      ylab("Alpha Diversity Measure") +
+      xlab("") +
+      theme(legend.position = "right") +
+      scale_color_brewer(palette = "Paired") +
+      ggtitle("Observed") +
+      ylim(0, 50) +
+      theme(plot.title = element_text(hjust = 0.5))
+
+bxp1 <- p +
+      geom_jitter(color="black", size=1, alpha=0.9) +
+      theme(legend.position = "none") +
+      theme(text = element_text(size = 10))  
+
+#add stats
+stat.test_o <- stat.test_o %>% add_xy_position(x = "Kit")
+
+a1 <- bxp1 + stat_pvalue_manual(stat.test_o, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE)
+
+#Plot shannon
+p <- ggplot(Shannon, aes(x=Kit, y=Shannon, color= Kit)) +
+      geom_boxplot() +
+      theme_bw() +
+      ylab("") +
+      xlab("") +
+      theme(legend.position = "right") +
+      scale_color_brewer(palette = "Paired") +
+      ggtitle("Shannon") +
+      ylim(0, 3) +
+      theme(plot.title = element_text(hjust = 0.5))
+
+bxp2 <- p +
+      geom_jitter(color="black", size=1, alpha=0.9) +
+      theme(legend.position = "none") +
+      theme(text = element_text(size = 10)) 
+
+#add stats
+stat.test_sh <- stat.test_sh %>% add_xy_position(x = "Kit")
+
+a2 <- bxp2 + stat_pvalue_manual(stat.test_sh, label = "p.adj.signif", tip.length = 0.1, hide.ns = TRUE)
+
+#Plot simpson
+p <- ggplot(Simpson, aes(x=Kit, y=Simpson, color= Kit)) +
+      geom_boxplot() +
+      theme_bw() +
+      ylab("") +
+      xlab("") +
+      theme(legend.position = "right") +
+      scale_color_brewer(palette = "Paired") +
+      ggtitle("Simpson") +
+      ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5)) +
+      guides(color=guide_legend(title="Extraction Kit"))
+
+bxp3 <- p +
+      geom_jitter(color="black", size=1, alpha=0.9) +
+      theme(text = element_text(size = 10)) +
+      theme(legend.position = "none")
+
+#add stats
+stat.test_si <- stat.test_si %>% add_xy_position(x = "Kit")
+
+a3 <- bxp3 + stat_pvalue_manual(stat.test_si, label = "p.adj.signif", tip.length = 0.3, hide.ns = T, bracket.nudge.y = 0.1, step.increase = 0)
+
+
+#Plot chao1
+p <- ggplot(Chao1, aes(x=Kit, y=Chao1, color= Kit)) +
+      geom_boxplot() +
+      theme_bw() +
+      ylab("") +
+      xlab("") +
+      theme(legend.position = "right") +
+      scale_color_brewer(palette = "Paired") +
+      ggtitle("Chao1") + ylim(0, 50) +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      guides(color=guide_legend(title="Extraction Kit"))
+
+bxp4 <- p +
+      geom_jitter(color="black", size=1, alpha=0.9) +
+      theme(text = element_text(size = 10)) 
+
+
+#add stats
+stat.test_ch <- stat.test_ch %>% add_xy_position(x = "Kit")
+
+a4 <- bxp4 + stat_pvalue_manual(stat.test_ch, label = "p.adj.signif", tip.length = 1, hide.ns = TRUE, bracket.nudge.y = 0.1, step.increase = 0)
+
+
+#add alpha diversity graphs panelled together
+a <- ggarrange(a1,a2,a3,a4, nrow=1, common.legend = TRUE, legend="right", labels = c("A"))
+
+```
+
+## PCoA for beta diversity (B)
+
+```{r PCoA_B}
+
+#create a tree using ape from your phyloseq (rarfied data)
+random_tree = rtree(ntaxa(physeq2), rooted=TRUE, tip.label=taxa_names(physeq2))
+
+#merge phyloseq object, sample data and the tree
+physeq3 = merge_phyloseq(physeq2, sampledata, random_tree)
+
+#simple point PCoA
+ordu = ordinate(physeq3, "PCoA", "bray", weighted=TRUE)
+
+b <- plot_ordination(physeq3, ordu, color="Kit", shape="Rep") +
+      geom_point(size=4) +
+      theme_bw() +
+      scale_color_brewer(palette = "Paired") +
+      scale_fill_brewer(palette = "Paired") +
+      guides(shape=guide_legend(title="Replicate")) +
+      guides(color=guide_legend(title="Extraction Kit")) + 
+      theme(text = element_text(size = 10)) +
+      geom_mark_ellipse(aes(group = Kit)) +
+      xlab("PC1 [59.9%]") +
+      ylab("PC2 [20.2%]")
+
+b <- ggarrange(b, nrow=1, labels = c("B"))
+
+```
+
+## Calculate PERMANOVA of PCoA
+
+```{r PERMANOVA}
+
+metadata <- as(sample_data(physeq3), "data.frame")
+
+permanova <- adonis2(distance(physeq3, method="bray") ~ Kit,
+       data = metadata)
+
+permanova
+
+```
+
+## Figure 1: Create 16S analysis figure for paper from above analyses
+
+```{r Figure_1_16S_analysis_kits, fig.height=14,fig.width=9}
+
+ggarrange(a,b,c, nrow=3, heights =c(1,1.5,1))
+
+```
+
+# Section 2: WGS and adaptive data analysis for sequencing chemsitry comparison
+
+## Figure 2: WGS and Adaptive relative abundance for LSK112 and LSK109
+
+```{r Figure_2_adaptive_WGS, fig.height=8,fig.width=10}
+
+#Plot WGS
+graph <- ggplot(subset(ad, Adaptive %in% c("Non-Adaptive")), aes(x= Sample, y= Percent_new, color=Genus, fill=Genus)) +
+      geom_bar(stat="identity", position="stack") +
+      theme_bw() +
+      ylab("") + 
+      xlab("") +
+      scale_fill_brewer(palette = "Spectral") +
+      scale_color_brewer(palette = "Spectral") +
+      facet_wrap(~ Kit, nrow=1, scales = 'free')
+
+a <- graph +
+      theme(text = element_text(size = 15), legend.position = "none") +
+      scale_x_discrete(labels=c('1', '2', '3'))+ labs(tag="")
+
+#Add expected
+graph <- ggplot(ad_ex, aes(x= Sample, y= Percent, color=Genus, fill=Genus)) +
+      geom_bar(stat="identity", position="stack") +
+      theme_bw() +
+      theme(axis.text.x = element_text(size=12, angle= , vjust = 0.5)) +
+      ylab("Relative Abundance (%)") +
+      xlab("") +
+      scale_fill_brewer(palette = "Spectral") + scale_color_brewer(palette = "Spectral") +
+      facet_wrap(~ Sample) 
+
+a1 <- graph +
+      theme(text = element_text(size = 15), legend.position = "none") +
+      labs(tag="")
+
+#Plot Adaptive
+graph1 <- ggplot(subset(ad, Adaptive %in% c("Adaptive")), aes(x= Sample, y= Percent_new, color=Genus, fill=Genus)) +
+      geom_bar(stat="identity", position="stack") +
+      theme_bw() + 
+      ylab("") + 
+      xlab("") +
+      scale_fill_brewer(palette = "Spectral") +
+      scale_color_brewer(palette = "Spectral") +
+      facet_wrap(~ Adaptive + Kit, nrow=1, scales = 'free')
+
+a2 <- graph1 +
+      theme(text = element_text(size = 15), legend.position = "none") +
+      scale_x_discrete(labels=c('1', '2', '3')) +
+      labs(tag="B")
+
+a3 <- ggarrange(a, a2)
+
+graph_1 <- ggarrange(a1, a, ncol = 2, nrow = 1, common.legend = TRUE, legend="right", widths = c(0.5, 2))
+
+graph_1
+
+```
+
+## Assembly statistics data preparation for boxplots
+
+```{r Assembly_Stats}
+
+# Test for normality using Shapiro Wilks
+
+# Variables to include in the analysis
+variables <- c("Fraction", "N50", "Indels_100kb", "Largest_contig", "Contigs", "Mismatch_100kb", "Coverage", "Depth")
+
+assem_data$Contigs <- as.numeric(assem_data$Contigs)
+
+assem_data$Indels <- as.numeric(assem_data$Indels)
+
+# Create an empty list to store boxplot objects
+boxplots <- list()
+
+# Loop through each variable
+#for (i in 1:length(variables)) {
+  # Perform Shapiro-Wilk test for normality
+  #shapiro_result <- shapiro.test(assem_data[[variables[i]]])
+  
+  # Print the result of the Shapiro-Wilk test
+  #cat("Shapiro-Wilk test for", variables[i], ":", "\n")
+ # print(shapiro_result)
+  #cat("\n")
+  
+#}
+
+# Adjust Indels and Mismatches to be per Mb (multiply by 10)
+assem_data$Indels_100kb <- assem_data$Indels_100kb * 10
+assem_data$Mismatch_100kb <- assem_data$Mismatch_100kb * 10
+
+# Rename the columns to reflect the new unit (per Mb)
+names(assem_data)[names(assem_data) == "Indels_100kb"] <- "Indels_Mb"
+names(assem_data)[names(assem_data) == "Mismatch_100kb"] <- "Mismatch_Mb"
+
+p <- ggplot(assem_data, aes(x=Chem, y=Fraction, color= Chem)) + 
+      geom_boxplot() + 
+      theme_bw() + 
+      ylab("Genome Fraction (%)") + 
+      xlab("Library") + 
+      theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+      theme(legend.position = "right")
+
+bxp <- p + 
+      geom_jitter(color="black", size=1, alpha=0.9) + 
+      scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+      scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+      theme(legend.position = "none") + 
+      ylim(0, 100) + 
+      xlab("") + 
+      theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+      labs(tag="D")
+
+assem_data$Fraction <- as.numeric(assem_data$Fraction)
+
+stat.test_gf <- assem_data %>%
+  wilcox_test(Fraction ~ Chem, paired = T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_gf
+
+#add stats
+stat.test_gf <- stat.test_gf %>% add_xy_position(x = "Chem")
+graph_1 <- bxp + stat_pvalue_manual(stat.test_gf, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE) 
+
+#N50
+
+p <- ggplot(assem_data, aes(x=Chem, y=N50, color= Chem)) + 
+      geom_boxplot() + 
+      theme_bw() + 
+      ylab("N50 (Mb)") + 
+      xlab("Library") + 
+      theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+      theme(legend.position = "right")
+
+bxp <- p + 
+      geom_jitter(color="black", size=1, alpha=0.9) + 
+      scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+      scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+      theme(legend.position = "none") + 
+      ylim(0, 5.5) + 
+      xlab("") + 
+      theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+      labs(tag="E")
+
+stat.test_n50 <- assem_data %>%
+  wilcox_test(N50 ~ Chem, paired = T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_n50
+
+#add stats
+stat.test_n50 <- stat.test_n50 %>% add_xy_position(x = "Chem")
+graph_2 <- bxp + stat_pvalue_manual(stat.test_n50, label = "p.adj.signif", tip.length = 0.03, hide.ns = TRUE, bracket.nudge.y = 0.5) 
+
+#Indels per Mb
+
+p <- ggplot(assem_data, aes(x=Chem, y=Indels_Mb, color= Chem)) + 
+     geom_boxplot() + 
+     theme_bw() + 
+     ylab("Indels per Mb") + 
+     xlab("Library") + 
+     theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+     theme(legend.position = "none")
+
+bxp <- p + 
+       geom_jitter(color="black", size=1, alpha=0.9) + 
+       scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+       scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+       xlab("") + 
+       theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+       ylim(0, 130) + 
+       labs(tag="F")
+
+# Run Wilcoxon Test for Indels per Mb
+stat.test_id <- assem_data %>% 
+  wilcox_test(Indels_Mb ~ Chem, paired = T, detailed = T) %>% 
+  adjust_pvalue(method = "BH") %>% 
+  add_significance()
+
+# Add statistics
+stat.test_id <- stat.test_id %>% add_xy_position(x = "Chem")
+graph_3 <- bxp + stat_pvalue_manual(stat.test_id, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE, bracket.nudge.y = 0.5)
+
+#Largest Contig
+
+p <- ggplot(assem_data, aes(x=Chem, y=Largest_contig, color= Chem)) + 
+      geom_boxplot() + 
+      theme_bw() + 
+      ylab("Largest Contig (Mb)") + 
+      xlab("Library") + 
+      theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+      theme(legend.position = "none")
+
+bxp <- p + 
+      geom_jitter(color="black", size=1, alpha=0.9) + 
+      scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+      scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+      ylim(0, 4.5) + 
+      xlab("") + 
+      theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+      labs(tag="G")
+
+stat.test_lc <- assem_data %>%
+  wilcox_test(Largest_contig ~ Chem, paired = T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_lc
+
+#add stats
+stat.test_lc <- stat.test_lc %>% add_xy_position(x = "Chem")
+graph_4 <- bxp + stat_pvalue_manual(stat.test_lc, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE) 
+
+#Contig
+
+p <- ggplot(assem_data, aes(x=Chem, y=Contigs, color= Chem)) + 
+      geom_boxplot() + 
+      theme_bw() + 
+      ylab("Number of Contigs") + 
+      xlab("Library") + 
+      theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+      theme(legend.position = "none")
+
+bxp <- p + 
+      geom_jitter(color="black", size=1, alpha=0.9) + 
+      scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+      scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+      ylim(0, 130) + 
+      xlab("") + 
+      theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+      labs(tag="H")
+
+stat.test_con <- assem_data %>%
+  wilcox_test(Contigs ~ Chem, paired = T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_con
+
+#add stats
+stat.test_con <- stat.test_con %>% add_xy_position(x = "Chem")
+graph_5 <- bxp + stat_pvalue_manual(stat.test_con, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE, bracket.nudge.y = 10) 
+
+
+#Mismatches per Mb
+
+p <- ggplot(assem_data, aes(x=Chem, y=Mismatch_Mb, color= Chem)) + 
+     geom_boxplot() + 
+     theme_bw() + 
+     ylab("Mismatches per Mb") + 
+     xlab("Library") + 
+     theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+     theme(legend.position = "none")
+
+bxp <- p + 
+       geom_jitter(color="black", size=1, alpha=0.9) + 
+       scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+       scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+       ylim(0, 600) + 
+       xlab("") + 
+       theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+       labs(tag="I")
+
+# Run Wilcoxon Test for Mismatches per Mb
+stat.test_c <- assem_data %>% 
+  wilcox_test(Mismatch_Mb ~ Chem, paired = T, detailed = T) %>% 
+  adjust_pvalue(method = "BH") %>% 
+  add_significance()
+
+# Add statistics
+stat.test_c <- stat.test_c %>% add_xy_position(x = "Chem")
+graph_6 <- bxp + stat_pvalue_manual(stat.test_c, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE)
+
+
+#Coverage
+
+p <- ggplot(assem_data, aes(x=Chem, y=Coverage, color= Chem)) + 
+      geom_boxplot() + 
+      theme_bw() + 
+      ylab("Coverage (%)") + 
+      xlab("Library") + 
+      theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+      theme(legend.position = "none")
+
+bxp <- p + 
+      geom_jitter(color="black", size=1, alpha=0.9) + 
+      scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+      scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+      ylim(0, 101) + 
+      xlab("") + 
+      theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+      labs(tag="J")
+
+stat.test_co <- assem_data %>%
+  wilcox_test(Coverage ~ Chem, paired = T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_co
+
+#add stats
+stat.test_co <- stat.test_co %>% add_xy_position(x = "Chem")
+graph_7 <- bxp + stat_pvalue_manual(stat.test_co, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE) 
+
+#Depth
+
+p <- ggplot(assem_data, aes(x=Chem, y=Depth, color= Chem)) + 
+      geom_boxplot() + 
+      theme_bw() + 
+      ylab("Depth") + 
+      xlab("Library") + 
+      theme(axis.text.x = element_text(size=12, angle= 45, vjust = 0.6)) + 
+      theme(legend.position = "none")
+
+bxp <- p + 
+      geom_jitter(color="black", size=1, alpha=0.9) + 
+      scale_x_discrete(labels=c('LSK109', 'LSK112')) + 
+      scale_color_manual(values=c("#ff864b", "#70ccac"), name="Library", labels=c('LSK109', 'LSK112')) + 
+      xlab("") + 
+      theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) + 
+      ylim(0,55) + 
+      labs(tag="K")
+
+stat.test_he <- assem_data %>%
+  wilcox_test(Depth ~ Chem, paired =T, detailed = T) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stat.test_he
+
+#add stats
+stat.test_he <- stat.test_co %>% add_xy_position(x = "Chem")
+stat.test_he
+graph_8 <- bxp + stat_pvalue_manual(stat.test_he, label = "p.adj.signif", tip.length = 0.01, hide.ns = TRUE)
+
+#Combine graphs 
+
+quality <- ggarrange(graph_1, graph_2, graph_3, graph_4, graph_5, graph_6, graph_7, graph_8, nrow=2, ncol=4, common.legend = TRUE, legend="bottom")
+
+```
+
+## Comparison of assembly length (Mb) and %GC content 
+
+```{r assem_length_gc}
+
+#Reference vs assemblies lengths
+
+#Aligned length v Ref length
+assembly <- ggplot((ref_assem), aes(x=Ref_length,y=Aligned)) +
+      geom_point(aes(colour= Genus, shape= Library), size =5) +
+      theme(text = element_text(size = 15)) +
+      theme_bw() +
+      scale_color_brewer(palette = "Spectral") +
+      ylab("Aligned Length of Assembly (Mb)") +
+      xlab("Reference Assembly Length (Mb)") +
+      geom_smooth(method = "lm", se = FALSE, color="black", size=0.5) +
+      theme(legend.position = "none") + labs(tag="A") +
+      ylim(0, 7) +
+      xlim(0, 7) +
+      geom_abline(intercept = 0, slope = 1, color = "grey", linetype = "dashed")
+
+#Assembly length v Ref length
+assem <-ggplot((ref_assem), aes(x=Ref_length,y=Seq_length)) +
+      geom_point(aes(colour= Genus, shape= Library), size =5) +
+      theme(text = element_text(size = 15)) +
+      theme_bw() +
+      scale_color_brewer(palette = "Spectral") +
+      ylab("Assembly Length (Mb)") + xlab("Reference Assembly Length (Mb)") +
+      geom_smooth(method = "lm", se = FALSE, color= "black", size=0.5) +
+      theme(legend.position = "none") +
+      scale_y_continuous(limits = c(1, 10), breaks = seq(0, 10, by = 1)) +
+      scale_x_continuous(limits = c(1, 10), breaks = seq(0, 10, by = 1)) +
+      geom_abline(intercept = 0, slope = 1, color = "grey", linetype = "dashed") +
+      labs(tag="B")
+
+#Assembly GC v Ref GC
+gc <- ggplot((ref_assem), aes(x=Ref_GC,y=LC_Seq_GC)) +
+      geom_point(aes(colour= Genus, shape= Library), size =5) +
+      theme(text = element_text(size = 15)) +
+      theme_bw() +
+      scale_color_brewer(palette = "Spectral") +
+      ylab("Largest Contig %GC") +
+      xlab("Reference %GC") +
+      geom_smooth(method = "lm", se = FALSE, color= "black", size=0.5) +
+      theme(legend.position = "none") +
+      labs(tag="C") +
+      ylim(0, 65) +
+      xlim(0, 65) +
+      geom_abline(intercept = 0, slope = 1, color = "grey", linetype = "dashed")
+
+
+#Test for normality and correlation test
+
+shapiro.test(ref_assem$Ref_GC)
+shapiro.test(ref_assem$LC_Seq_GC)
+cor.test(formula = ~ Ref_GC + LC_Seq_GC,
+         data = ref_assem, method=c("pearson"))
+
+
+shapiro.test(ref_assem$Ref_length)
+shapiro.test(ref_assem$Seq_length)
+cor.test(formula = ~ Ref_length + Seq_length,
+         data = ref_assem, method=c("pearson"))
+
+shapiro.test(ref_assem$Aligned)
+cor.test(formula = ~ Ref_length + Aligned,
+         data = ref_assem, method=c("pearson"))
+
+#Estimate Euclidean distance between points
+euclidean <- function(a, b) sqrt(sum((a - b)^2))
+
+a <- (ref_assem$Ref_GC)
+b <- (ref_assem$Seq_GC)
+
+euclidean(a,b)
+
+metrics <- ggarrange(assembly, assem, gc, nrow=1, ncol=3, common.legend = TRUE, legend="right")
+
+
+metrics
+
+```
+
+## PAF alignments for LSK112 v LSK109 and vs reference
+
+```{r PAF_alignment plots}
+
+# Function to create plots
+create_plot <- function(file_prefix, title) {
+  data <- read_paf(paste0(paf_dir, file_prefix, ".paf"))
+  plot <- ggplot(data, aes(x = tstart, y = qend, xend = tend, yend = qstart, color = dv)) +
+    geom_segment() +
+    scale_colour_viridis(option = "viridis") +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(face = "italic"),
+          axis.text.x = element_text(size = 8, angle = 45, vjust = 0.5),
+          axis.text.y = element_text(size = 8, angle = 0, vjust = 0.5)) +
+    labs(title = title, x = "Target", y = "Query") +
+    scale_x_continuous(labels = scientific) +
+    scale_y_continuous(labels = scientific)
+  
+  return(plot)
+}
+# Panelled figure function
+panelled_figure <- function(titles, prefixes, nrow, ncol, overall_title) {
+  plots <- lapply(seq_along(titles), function(i) {
+    create_plot(prefixes[i], titles[i])
+  })
+  
+  g <- wrap_plots(plots, nrow = nrow, ncol = ncol)
+  g <- g + plot_annotation(title = overall_title)
+  
+  return(g)
+}
+
+# Create panelled figure for 109 vs 112
+titles_109_112 <- c("B.subtillis", "E. coli", "E. faecalis", "L. fermentum", "L. monocytogenes", 
+                    "P. aeruginosa", "S. aureus", "S. enterica")
+prefixes_109_112 <- c("BS_109-112_new", "EC_109-112_new", "EF_109-112_new", "LF_109-112_new",
+                      "LM_109-112_new", "PA_109-112_new", "SA_109-112_new", "SE_109-112_new")
+panel_109_112 <- panelled_figure(titles_109_112, prefixes_109_112, nrow = 2, ncol = 4, overall_title = "LSK109 vs LSK112")
+
+# Create panelled figure for 109 vs Ref
+titles_109_Ref <- c("B.subtillis", "E. coli", "E. faecalis", "L. fermentum", "L. monocytogenes", 
+                    "P. aeruginosa", "S. aureus", "S. enterica")
+prefixes_109_Ref <- c("BS_109_new", "EC_109_new", "EF_109_new", "LF_109_new",
+                      "LM_109_new", "PA_109_new", "SA_109_new", "SE_109_new")
+panel_109_Ref <- panelled_figure(titles_109_Ref, prefixes_109_Ref, nrow = 2, ncol = 4, overall_title = "LSK109 vs Reference")
+
+# Create panelled figure for 112 vs Ref
+titles_112_Ref <- c("B.subtillis", "E. coli", "E. faecalis", "L. fermentum", "L. monocytogenes", 
+                    "P. aeruginosa", "S. aureus", "S. enterica")
+prefixes_112_Ref <- c("BS_112_new", "EC_112_new", "EF_112_new", "LF_112_new",
+                      "LM_112_new", "PA_112_new", "SA_112_new", "SE_112_new")
+panel_112_Ref <- panelled_figure(titles_112_Ref, prefixes_112_Ref, nrow = 2, ncol = 4, overall_title = "LSK112 vs Reference")
+
+```
+
+## Figure S5: Supplementary figure comparing LSK112 v LSK112
+
+```{r Figure_S5_LSK112_v_LSK109, fig.height=8,fig.width=9}
+
+# Arrange the final plot
+LSK112_LSK109 <- plot_grid(panel_109_112, ncol = 1)
+
+# Output the final plot
+LSK112_LSK109
+
+```
+
+## Figure 3: Create figure for assembly metrics and alignments
+
+```{r Figure_3_Assembly_PAF, fig.height=15,fig.width=20}
+
+#Panel together assembly quality and PAF plots
+
+paf <- ggarrange(panel_109_Ref, panel_112_Ref, ncol = 1, common.legend = TRUE, legend="right", labels = c("L"))
+
+a <- ggarrange(metrics, quality, nrow=2)
+
+ggarrange(a, paf, ncol=2)
+
+```
+
+## Chi-squared analysis for counts of WGS (LSK112 vs LSK109 and vs expected)
+
+```{r Chi_squared_WGS_112_109_counts}
+
+#Function to read in data, process and run Chi-squared analysis
+process_and_summarize <- function(data) {
+  rownames(data) <- data[, 1]
+  data <- data[, -1, drop = FALSE]  # Exclude the first column
+  data <- as.table(as.matrix(data))
+  return(summary(data))
+}
+
+# Process and summarize the data for each table
+process_and_summarize(chi_109_112)
+process_and_summarize(chi_109_c)
+process_and_summarize(chi_112_c)
+
+```
+
+## Chi-squared analysis for percent of WGS (LSK112 and LSK109 vs expected)
+
+```{r Chi_squared_WGS_112_109_percent}
+
+# Process and summarize the data for each table
+process_and_summarize(chi_109_p)
+process_and_summarize(chi_112_p)
+
+```
+
+## Chi-squared analysis for copy number of WGS (LSK112 and LSK109 vs expected)
+
+```{r Chi_squared_WGS_112_109_copy_number}
+
+# Process and summarize the data for each table
+process_and_summarize(chi_109_cn)
+process_and_summarize(chi_112_cn)
+
+```
+

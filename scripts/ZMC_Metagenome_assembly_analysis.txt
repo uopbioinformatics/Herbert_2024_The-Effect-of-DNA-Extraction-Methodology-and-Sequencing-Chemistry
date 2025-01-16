@@ -1,0 +1,618 @@
+[data_dir]#NEW ASSEMBLIES; Re-run data for new assemblies
+#New References from : https://zenodo.org/record/3935737#.ZCStey0w1QI
+
+#First run QC as per manuscript details on raw fastq files, output files should be:
+- N2_EXP019_LSK109_Full_0001.fq.gz
+- N2_EXP019_LSK109_Full_0002.fq.gz
+- N2_EXP019_LSK109_Full_0003.fq.gz
+- N2_EXP019_LSK112_Full_0001.fq.gz
+- N2_EXP019_LSK112_Full_0002.fq.gz
+- N2_EXP019_LSK112_Full_0003.fq.gz
+
+# Then Map each ZMC reference genome to the metagenome fastq files for LSK109 and LSK112 as per stated within the manuscript, create separate folders for each bam file created for each organism individually with the mapping information (for each replicate) and follow the code below
+
+
+#LSK109
+
+#B. subtillis
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > B.subtillis_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > B.subtillis_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > B.subtillis_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz B.subtillis_109_1.txt > B.subtillis_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz B.subtillis_109_2.txt > B.subtillis_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz B.subtillis_109_3.txt > B.subtillis_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/B.subtillis_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/B.subtillis_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/B.subtillis_109_3.subseq.fastq > B.subtillis_109.fastq
+
+#LSK112
+
+#B. subtillis
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > B.subtillis_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > B.subtillis_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > B.subtillis_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz B.subtillis_112_1.txt > B.subtillis_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz B.subtillis_112_2.txt > B.subtillis_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz B.subtillis_112_3.txt > B.subtillis_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/B.subtillis_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/B.subtillis_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/B.subtillis_112_3.subseq.fastq > B.subtillis_112.fastq
+
+awk '{s++}END{print s/4}' B.subtillis_109.fastq
+#40843
+awk '{s++}END{print s/4}' B.subtillis_112.fastq
+#45689
+
+seqtk sample -s 100 B.subtillis_112.fastq 40843 > B.subtillis_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq B.subtillis_112.s.fastq --out-dir BS_112 --threads 24 2> BS_112.err
+
+flye --nano-hq B.subtillis_109.fastq --out-dir BS_109 --threads 24 2> BS_109.err
+
+
+#E. coli
+
+#LSK109
+
+#E. coli
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > E.coli_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > E.coli_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > E.coli_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz E.coli_109_1.txt > E.coli_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz E.coli_109_2.txt > E.coli_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz E.coli_109_3.txt > E.coli_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/E.coli_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/E.coli_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/E.coli_109_3.subseq.fastq > E.coli_109.fastq
+
+#LSK112
+
+#E. coli
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > E.coli_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > E.coli_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > E.coli_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz E.coli_112_1.txt > E.coli_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz E.coli_112_2.txt > E.coli_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz E.coli_112_3.txt > E.coli_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/E.coli_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/E.coli_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/E.coli_112_3.subseq.fastq > E.coli_112.fastq
+
+#subset sample with most reads to match other
+awk '{s++}END{print s/4}' E.coli_109.fastq
+#107250
+awk '{s++}END{print s/4}' E.coli_112.fastq
+#121797
+
+seqtk sample -s 100 E.coli_112.fastq 107250 > E.coli_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq E.coli_112.s.fastq --out-dir EC_112 --threads 24 2> EC_112.err
+flye --nano-hq E.coli_109.fastq --out-dir EC_109 --threads 24 2> EC_109.err
+
+
+#E. faecalis
+
+#LSK109
+
+#E. faecalis
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > E.faecalis_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > E.faecalis_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > E.faecalis_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz E.faecalis_109_1.txt > E.faecalis_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz E.faecalis_109_2.txt > E.faecalis_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz E.faecalis_109_3.txt > E.faecalis_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/E.faecalis_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/E.faecalis_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/E.faecalis_109_3.subseq.fastq > E.faecalis_109.fastq
+
+#LSK112
+
+#E. faecalis
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > E.faecalis_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > E.faecalis_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > E.faecalis_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz E.faecalis_112_1.txt > E.faecalis_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz E.faecalis_112_2.txt > E.faecalis_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz E.faecalis_112_3.txt > E.faecalis_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/E.faecalis_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/E.faecalis_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/E.faecalis_112_3.subseq.fastq > E.faecalis_112.fastq
+
+awk '{s++}END{print s/4}' E.faecalis_112.fastq
+#28562
+awk '{s++}END{print s/4}' E.faecalis_109.fastq
+#27668
+
+#subset sample with most reads to match other
+seqtk sample -s 100 E.faecalis_112.fastq 28562 > E.faecalis_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq E.faecalis_112.s.fastq --out-dir EF_112 --threads 24 2> EF_112.err
+flye --nano-hq E.faecalis_109.fastq --out-dir EF_109 --threads 24 2> EF_109.err
+
+
+#S. aureus
+
+#LSK109
+
+#S. aureus
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > S.aureus_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > S.aureus_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > S.aureus_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz S.aureus_109_1.txt > S.aureus_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz S.aureus_109_2.txt > S.aureus_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz S.aureus_109_3.txt > S.aureus_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/S.aureus_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/S.aureus_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/S.aureus_109_3.subseq.fastq > S.aureus_109.fastq
+
+#LSK112
+
+#S. aureus
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > S.aureus_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > S.aureus_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > S.aureus_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz S.aureus_112_1.txt > S.aureus_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz S.aureus_112_2.txt > S.aureus_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz S.aureus_112_3.txt > S.aureus_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/S.aureus_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/S.aureus_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/S.aureus_112_3.subseq.fastq > S.aureus_112.fastq
+
+awk '{s++}END{print s/4}' S.aureus_109.fastq
+#36834
+awk '{s++}END{print s/4}' S.aureus_112.fastq
+#43538
+
+#subset sample with most reads to match other
+seqtk sample -s 100 S.aureus_112.fastq 36834 > S.aureus_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq S.aureus_112.s.fastq --out-dir SA_112 --threads 24 2> SA_112.err
+
+flye --nano-hq S.aureus_109.fastq --out-dir SA_109 --threads 24 2> SA_109.err
+
+
+#S. enterica
+
+#LSK109
+
+#S. enterica
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > S.enterica_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > S.enterica_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > S.enterica_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz S.enterica_109_1.txt > S.enterica_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz S.enterica_109_2.txt > S.enterica_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz S.enterica_109_3.txt > S.enterica_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/S.enterica_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/S.enterica_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/S.enterica_109_3.subseq.fastq > S.enterica_109.fastq
+
+#LSK112
+
+#S. enterica
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > S.enterica_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > S.enterica_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > S.enterica_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz S.enterica_112_1.txt > S.enterica_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz S.enterica_112_2.txt > S.enterica_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz S.enterica_112_3.txt > S.enterica_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/S.enterica_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/S.enterica_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/S.enterica_112_3.subseq.fastq > S.enterica_112.fastq
+
+awk '{s++}END{print s/4}' S.enterica_109.fastq
+#77975
+awk '{s++}END{print s/4}' S.enterica_112.fastq
+#119516
+
+#subset sample with most reads to match other
+seqtk sample -s 100 S.enterica_112.fastq 77975 > S.enterica_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq S.enterica_112.s.fastq --out-dir SE_112 --threads 24 2> SE_112.err
+
+flye --nano-hq S.enterica_109.fastq --out-dir SE_109 --threads 24 2> SE_109.err
+
+
+#P. aeruginosa
+
+#LSK109
+
+#P. aeruginosa
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > P.aeruginosa_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > P.aeruginosa_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > P.aeruginosa_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz P.aeruginosa_109_1.txt > P.aeruginosa_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz P.aeruginosa_109_2.txt > P.aeruginosa_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz P.aeruginosa_109_3.txt > P.aeruginosa_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/P.aeruginosa_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/P.aeruginosa_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/P.aeruginosa_109_3.subseq.fastq > P.aeruginosa_109.fastq
+
+#LSK112
+
+#P. aeruginosa
+
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > P.aeruginosa_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > P.aeruginosa_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > P.aeruginosa_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz P.aeruginosa_112_1.txt > P.aeruginosa_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz P.aeruginosa_112_2.txt > P.aeruginosa_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz P.aeruginosa_112_3.txt > P.aeruginosa_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/P.aeruginosa_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/P.aeruginosa_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/P.aeruginosa_112_3.subseq.fastq > P.aeruginosa_112.fastq
+
+awk '{s++}END{print s/4}' P.aeruginosa_109.fastq
+#144512
+awk '{s++}END{print s/4}' P.aeruginosa_112.fastq
+#265343
+
+#subset sample with most reads to match other
+seqtk sample -s 100 P.aeruginosa_112.fastq 144512 > P.aeruginosa_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq P.aeruginosa_112.s.fastq --out-dir PA_112 --threads 24 2> PA_112.err
+
+flye --nano-hq P.aeruginosa_109.fastq --out-dir PA_109 --threads 24 2> PA_109.err
+
+
+#L. monocytogenes
+
+#LSK109
+
+#L. monocytogenes
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > L.monocytogenes_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > L.monocytogenes_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > L.monocytogenes_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz L.monocytogenes_109_1.txt > L.monocytogenes_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz L.monocytogenes_109_2.txt > L.monocytogenes_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz L.monocytogenes_109_3.txt > L.monocytogenes_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/L.monocytogenes_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/L.monocytogenes_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/L.monocytogenes_109_3.subseq.fastq > L.monocytogenes_109.fastq
+
+#LSK112
+
+#L. monocytogenes
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > L.monocytogenes_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > L.monocytogenes_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > L.monocytogenes_112_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz L.monocytogenes_112_1.txt > L.monocytogenes_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz L.monocytogenes_112_2.txt > L.monocytogenes_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz L.monocytogenes_112_3.txt > L.monocytogenes_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/L.monocytogenes_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/L.monocytogenes_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/L.monocytogenes_112_3.subseq.fastq > L.monocytogenes_112.fastq
+
+awk '{s++}END{print s/4}' L.monocytogenes_109.fastq
+#26735
+awk '{s++}END{print s/4}' L.monocytogenes_112.fastq
+#27692
+
+#subset sample with most reads to match other
+seqtk sample -s 100 L.monocytogenes_112.fastq 26735 > L.monocytogenes_112.s.fastq
+
+conda activate wgs_assembly
+flye --nano-hq L.monocytogenes_112.s.fastq --out-dir LM_112 --threads 24 2> LM_112.err
+
+flye --nano-hq L.monocytogenes_109.fastq --out-dir LM_109 --threads 24 2> LM_109.err
+
+
+#L. fermentum
+
+#LSK109
+
+#L. fermentum
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0001.filtered.bam | cut -f1 | sort | uniq > L.fermentum_109_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0002.filtered.bam | cut -f1 | sort | uniq > L.fermentum_109_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK109_Full_0003.filtered.bam | cut -f1 | sort | uniq > L.fermentum_109_3.txt
+
+#Subset fastq file
+conda activate pipeline
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0001.fq.gz L.fermentum_109_1.txt > L.fermentum_109_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0002.fq.gz L.fermentum_109_2.txt > L.fermentum_109_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK109_Full_0003.fq.gz L.fermentum_109_3.txt > L.fermentum_109_3.subseq.fastq
+
+cat N2_EXP019_LSK109_Full_0001/L.fermentum_109_1.subseq.fastq N2_EXP019_LSK109_Full_0002/L.fermentum_109_2.subseq.fastq N2_EXP019_LSK109_Full_0003/L.fermentum_109_3.subseq.fastq > L.fermentum_109.fastq
+
+#LSK112
+
+#L. fermentum
+
+#Get all mapped read IDs
+conda activate samtools
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0001.filtered.bam | cut -f1 | sort | uniq > L.fermentum_112_1.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0002.filtered.bam | cut -f1 | sort | uniq > L.fermentum_112_2.txt
+samtools view -F 4 -q 20 N2_EXP019_LSK112_Full_0003.filtered.bam | cut -f1 | sort | uniq > L.fermentum_112_3.txt
+
+#Subset fastq file
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0001.fq.gz L.fermentum_112_1.txt > L.fermentum_112_1.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0002.fq.gz L.fermentum_112_2.txt > L.fermentum_112_2.subseq.fastq
+seqtk subseq [data_dir]/N2_EXP019_LSK112_Full_0003.fq.gz L.fermentum_112_3.txt > L.fermentum_112_3.subseq.fastq
+
+cat N2_EXP019_LSK112_Full_0001/L.fermentum_112_1.subseq.fastq N2_EXP019_LSK112_Full_0002/L.fermentum_112_2.subseq.fastq N2_EXP019_LSK112_Full_0003/L.fermentum_112_3.subseq.fastq > L.fermentum_112.fastq
+
+awk '{s++}END{print s/4}' L.fermentum_109.fastq
+#13501
+awk '{s++}END{print s/4}' L.fermentum_112.fastq
+#18442
+
+#subset sample with most reads to match other
+seqtk sample -s 100 L.fermentum_112.fastq 13501 > L.fermentum_112.s.fastq
+
+flye --nano-hq L.fermentum_112.s.fastq --out-dir LF_112 --threads 24 2> LF_112.err
+
+flye --nano-hq L.fermentum_109.fastq --out-dir LF_109 --threads 24 2> LF_109.err
+
+
+#Now run QC and analysis on the new assemblies to get values used in manuscript
+
+#Quast
+
+python /envs/wgs_assembly/bin/quast.py LM_112_new.fasta LM_109_new.fasta -r Listeria_monocytogenes_complete_genome.fasta -o Quast_LM/
+
+python /envs/wgs_assembly/bin/quast.py LF_112_new.fasta LF_109_new.fasta -r Lactobacillus_fermentum_complete_genome.fasta -o Quast_LF/
+
+python /envs/wgs_assembly/bin/quast.py BS_112_new.fasta BS_109_new.fasta -r Bacillus_subtilis_complete_genome.fasta -o Quast_BS/
+
+python /envs/wgs_assembly/bin/quast.py EC_109_new.fasta EC_112_new.fasta -r Escherichia_coli_complete_genome.fasta -o Quast_EC/
+
+python /envs/wgs_assembly/bin/quast.py EF_109_new.fasta EF_112_new.fasta -r Enterococcus_faecalis_complete_genome.fasta -o Quast_EF/
+
+python /envs/wgs_assembly/bin/quast.py SA_109_new.fasta SA_112_new.fasta -r Staphylococcus_aureus_complete_genome.fasta -o Quast_SA/
+
+python /envs/wgs_assembly/bin/quast.py SE_109_new.fasta SE_112_new.fasta -r Salmonella_enterica_complete_genome.fasta -o Quast_SE/
+
+#CheckM
+
+conda activate checkm
+
+checkm lineage_wf -t 8 -x fasta old_analysis 
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Bin Id                                             Marker lineage           # genomes   # markers   # marker sets   0     1     2    3    4    5+   Completeness   Contamination   Strain heterogeneity  
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  ZymoBIOMICS_refs                                    root (UID1)                5656         56            24        0     0     0    0    0    56      100.00          996.87              4.13          
+  SE_112_new                                          root (UID1)                5656         56            24        0     0     14   17   18   7       100.00          181.25             56.41          
+  SE_109_new                                          root (UID1)                5656         56            24        0     0     13   18   11   14      100.00          190.58             58.49          
+  PA_112_new                                      k__Bacteria (UID203)           5449        104            58        0     33    59   12   0    0       100.00          62.95              14.74          
+  PA_109_new                                      k__Bacteria (UID203)           5449        104            58        0     32    41   9    22   0       100.00          78.32              40.50          
+  LM_112_new                                      k__Bacteria (UID203)           5449        104            58        0     15    24   16   28   21      100.00          145.92              7.11          
+  LM_109_new                                          root (UID1)                5656         56            24        0     4     3    6    15   28      100.00          231.48              8.44          
+  EF_112_new                                          root (UID1)                5656         56            24        0     4     7    6    28   11      100.00          183.33             11.55          
+  EC_112_new                                          root (UID1)                5656         56            24        0     0     15   16   8    17      100.00          187.45             60.42          
+  EC_109_new                                          root (UID1)                5656         56            24        0     0     15   15   13   13      100.00          186.70             59.09          
+  Bacillus_subtilis_complete_genome               g__Bacillus (UID865)            36         1200          269        2    1196   2    0    0    0       99.75            0.25               0.00          
+  Salmonella_enterica_complete_genome       f__Enterobacteriaceae (UID5139)      119         1169          340        1    1167   1    0    0    0       99.71            0.04               0.00          
+  Pseudomonas_aeruginosa_complete_genome      o__Pseudomonadales (UID4488)       185         813           308        1    807    5    0    0    0       99.68            0.61               0.00          
+  Enterococcus_faecalis_complete_genome       o__Lactobacillales (UID544)        293         475           267        1    473    1    0    0    0       99.63            0.19               0.00          
+  Listeria_monocytogenes_complete_genome          c__Bacilli (UID354)            515         329           183        1    328    0    0    0    0       99.45            0.00               0.00          
+  Staphylococcus_aureus_complete_genome        g__Staphylococcus (UID301)         45         940           178        5    934    1    0    0    0       99.41            0.08               0.00          
+  Escherichia_coli_complete_genome          f__Enterobacteriaceae (UID5124)      134         1173          336        7    1157   9    0    0    0       99.22            0.66              22.22          
+  Lactobacillus_fermentum_complete_genome     o__Lactobacillales (UID355)        490         334           183        2    331    1    0    0    0       99.18            0.55              100.00         
+  SA_112_new                                      k__Bacteria (UID203)           5449        104            58        1     25    21   6    3    48      98.28           127.43              6.33          
+  SA_109_new                                      k__Bacteria (UID203)           5449        104            58        1     30    13   9    5    46      98.28           127.72              5.89          
+  LF_112_new                                      k__Bacteria (UID203)           5449        104            58        1     63    23   17   0    0       98.28           15.09               4.05          
+  LF_109_new                                      k__Bacteria (UID203)           5449        104            58        1     62    17   24   0    0       98.28           17.62               2.25          
+  EF_109_new                                      k__Bacteria (UID203)           5449        104            58        1     18    25   15   33   12      98.28           123.56             10.05          
+  BS_112_new                                      k__Bacteria (UID203)           5449        104            58        1     44    10   1    30   18      98.28           79.23              10.75          
+  BS_109_new                                      k__Bacteria (UID203)           5449        104            58        1     40    14   0    38   11      98.28           79.86              10.75          
+  Saccharomyces_cerevisiae_draft_genome           k__Bacteria (UID203)           5449        104            58        29    25    20   28   1    1       60.03           36.92              17.50          
+  Cryptococcus_neoformans_draft_genome             k__Archaea (UID2)             207         149           107        69    33    29   10   4    4       48.29           30.36              30.08          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Mapping for PAF - these can then be used in Red script to create plots
+
+#LF
+
+#map each assembly to the ref
+
+#PA
+#109
+minimap2 PA_109_new.fasta Pseudomonas_aeruginosa_complete_genome.fasta -t 8 > PA_109_new.paf
+
+#112
+minimap2 PA_112_new.fasta Pseudomonas_aeruginosa_complete_genome.fasta -t 8 > PA_112_new.paf
+
+#map assemblies against one another in R
+minimap2 PA_109_new.fasta PA_112_new.fasta -t 8 > PA_109-112_new.paf
+
+#LF
+#109
+minimap2 LF_109_new.fasta Lactobacillus_fermentum_complete_genome.fasta -t 8 > LF_109_new.paf
+
+#112
+minimap2 LF_112_new.fasta Lactobacillus_fermentum_complete_genome.fasta -t 8 > LF_112_new.paf
+
+#map assemblies against one another in R
+minimap2 LF_109_new.fasta LF_112_new.fasta -t 8 > LF_109-112_new.paf
+
+#LM
+
+#map assemblies against one another in R
+minimap2 LM_109_new.fasta LM_112_new.fasta -t 8 > LM_109-112_new.paf
+
+#map each assembly to the ref
+#109
+minimap2 LM_109_new.fasta Listeria_monocytogenes_complete_genome.fasta -t 8 > LM_109_new.paf
+
+#112
+minimap2 LM_112_new.fasta Listeria_monocytogenes_complete_genome.fasta -t 8 > LM_112_new.paf
+
+#BS
+
+#map assemblies against one another in R
+minimap2 BS_109_new.fasta BS_112_new.fasta -t 8 > BS_109-112_new.paf
+
+#map each assembly to the ref
+#109
+minimap2 BS_109_new.fasta Bacillus_subtilis_complete_genome.fasta -t 8 > BS_109_new.paf
+
+#112
+minimap2 BS_112_new.fasta Bacillus_subtilis_complete_genome.fasta -t 8 > BS_112_new.paf
+
+#EC
+
+#map assemblies against one another in R
+minimap2 EC_109_new.fasta EC_112_new.fasta -t 8 > EC_109-112_new.paf
+
+#map each assembly to the ref
+#109
+minimap2 EC_109_new.fasta Escherichia_coli_complete_genome.fasta -t 8 > EC_109_new.paf
+
+#112
+minimap2 EC_112_new.fasta Escherichia_coli_complete_genome.fasta -t 8 > EC_112_new.paf
+
+#EF
+
+#map assemblies against one another in R
+minimap2 EF_109_new.fasta EF_112_new.fasta -t 8 > EF_109-112_new.paf
+
+#map each assembly to the ref
+#109
+minimap2 EF_109_new.fasta Enterococcus_faecalis_complete_genome.fasta -t 8 > EF_109_new.paf
+
+#112
+minimap2 EF_112_new.fasta Enterococcus_faecalis_complete_genome.fasta -t 8 > EF_112_new.paf
+
+#map assemblies against one another in R
+minimap2 SA_109_new.fasta SA_112_new.fasta -t 8 > SA_109-112_new.paf
+
+#map each assembly to the ref
+#109
+minimap2 SA_109_new.fasta Staphylococcus_aureus_complete_genome.fasta -t 8 > SA_109_new.paf
+
+#112
+minimap2 SA_112_new.fasta Staphylococcus_aureus_complete_genome.fasta -t 8 > SA_112_new.paf
+
+#map assemblies against one another in R
+minimap2 SE_109_new.fasta SE_112_new.fasta -t 8 > SE_109-112_new.paf
+
+#map each assembly to the ref
+#109
+minimap2 SE_109_new.fasta Salmonella_enterica_complete_genome.fasta -t 8 > SE_109_new.paf
+
+#112
+minimap2 SE_112_new.fasta Salmonella_enterica_complete_genome.fasta -t 8 > SE_112_new.paf
+Coverage and Depth
+
+#Run minimap2 to get bam files
+ minimap2 -x map-ont -a Escherichia_coli_complete_genome.fasta EC/E.coli_109.fastq | samtools sort -o EC_109.bam
+ minimap2 -x map-ont -t 12 -a EC_112_new.fasta EC/E.coli_112.fastq | samtools sort -o EC_112.bam
+ minimap2 -x map-ont -t 12 -a BS_112_new.fasta BS/B.subtillis_112.fastq | samtools sort -o BS_112.bam
+ minimap2 -x map-ont -t 12 -a BS_109_new.fasta BS/B.subtillis_109.fastq | samtools sort -o BS_109.bam
+ minimap2 -x map-ont -t 12 -a EF_109_new.fasta EF/E.faecalis_109.fastq | samtools sort -o EF_109.bam
+ minimap2 -x map-ont -t 12 -a EF_112_new.fasta EF/E.faecalis_112.fastq | samtools sort -o EF_112.bam
+ minimap2 -x map-ont -t 12 -a SA_112_new.fasta SA/S.aureus_112.fastq | samtools sort -o SA_112.bam
+ minimap2 -x map-ont -t 12 -a SA_109_new.fasta SA/S.aureus_109.fastq | samtools sort -o SA_109.bam
+ minimap2 -x map-ont -t 12 -a SE_109_new.fasta SE/S.enterica_109.fastq | samtools sort -o SE_109.bam
+ minimap2 -x map-ont -t 12 -a SE_112_new.fasta SE/S.enterica_112.fastq | samtools sort -o SE_112.bam
+ minimap2 -x map-ont -t 12 -a PA_112_new.fasta PA/P.aeruginosa_112.fastq | samtools sort -o PA_112.bam
+ minimap2 -x map-ont -t 12 -a PA_109_new.fasta PA/P.aeruginosa_109.fastq | samtools sort -o PA_109.bam
+ minimap2 -x map-ont -t 12 -a LF_109_new.fasta LF/L.faecalis_109.fastq | samtools sort -o LF_109.bam
+ minimap2 -x map-ont -t 12 -a LF_109_new.fasta LF/L.fermentum_109.fastq | samtools sort -o LF_109.bam
+ minimap2 -x map-ont -t 12 -a LF_112_new.fasta LF/L.fermentum_112.fastq | samtools sort -o LF_112.bam
+ minimap2 -x map-ont -t 12 -a LM_112_new.fasta LM/L.monocytogenes_112.fastq | samtools sort -o LM_112.bam
+ minimap2 -x map-ont -t 12 -a LM_109_new.fasta LM/L.monocytogenes_109.fastq | samtools sort -o LM_109.bam
+
+#run average_cov_samtools_coverage.sh
+
+sbatch average_cov_samtools_coverage.sh
+
+# This indexes the bam files and creates tables of coverage and depth
+
+#BUSCO
+
+ busco -i BS_109_new.fasta -l bacteria -m genome -o BS_109 -c 1 --augustus_species=s_aureus
+ busco -i BS_112_new.fasta -l bacteria -m genome -o BS_112 -c 1 --augustus_species=s_aureus
+ busco -i EC_112_new.fasta -l bacteria -m genome -o EC_112 -c 1 --augustus_species=s_aureus
+ busco -i EC_109_new.fasta -l bacteria -m genome -o EC_109 -c 1 --augustus_species=s_aureus
+ busco -i SA_109_new.fasta -l bacteria -m genome -o SA_109 -c 1 --augustus_species=s_aureus
+ busco -i SA_112_new.fasta -l bacteria -m genome -o SA_112 -c 1 --augustus_species=s_aureus
+ busco -i SE_112_new.fasta -l bacteria -m genome -o SE_112 -c 1 --augustus_species=s_aureus
+ busco -i EF_112_new.fasta -l bacteria -m genome -o EF_112 -c 1 --augustus_species=s_aureus
+ busco -i EF_109_new.fasta -l bacteria -m genome -o EF_109 -c 1 --augustus_species=s_aureus
+ busco -i LF_109_new.fasta -l bacteria -m genome -o LF_109 -c 1 --augustus_species=s_aureus
+ busco -i LF_112_new.fasta -l bacteria -m genome -o LF_112 -c 1 --augustus_species=s_aureus
+ busco -i LM_112_new.fasta -l bacteria -m genome -o LM_112 -c 1 --augustus_species=s_aureus
+ busco -i LM_109_new.fasta -l bacteria -m genome -o LM_109 -c 1 --augustus_species=s_aureus
+ busco -i PA_109_new.fasta -l bacteria -m genome -o PA_109 -c 1 --augustus_species=s_aureus
+ busco -i PA_112_new.fasta -l bacteria -m genome -o PA_112 -c 1 --augustus_species=s_aureus
+ busco -i SE_109_new.fasta -l bacteria -m genome -o SE_109 -c 1 --augustus_species=s_aureus

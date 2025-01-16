@@ -1,0 +1,192 @@
+---
+title: "Adaptive Analysis of *S. cerevisiae* Data (8 hours subset)"
+author: "Jo Herbert"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 4
+    number_sections: no
+    latex_engine: xelatex
+  rmarkdown::pdf_document:
+    extra_dependencies: float
+    toc: yes
+html_document:
+  toc: yes
+toc_float: yes
+---
+
+# Description
+
+This script calculates the number of bases within each file (raw and trimmed) for the full metagenomic and adaptive sequencing runs of metagenomic ZMC DNA extracted using the BM kit using both the LSK109 and LSK112 sequencing chemistries.
+
+# Setup
+
+First let us set up the R environment:
+
+## Global options
+
+```{r global options, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      error = FALSE,
+                      eval = TRUE,
+                      dev = c('pdf', 'png'),
+                      width = 60,
+                      fig.align = 'center', 
+                      fig.height = 10, 
+                      fig.width = 10, 
+                      fig.dpi = 300,
+                      fig.pos = "!H",
+                      dpi = 300,
+                      out.extra = "",
+                      message = FALSE, 
+                      cache = FALSE,
+                      pdf.options(encoding = "ISOLatin9.enc"),
+                      fig.path='figs/') 
+```
+
+## Library 
+
+```{r Library}
+## Load the libraries
+library(readr)
+library(dplyr)
+```
+
+## Parameters
+
+``` {r Parameters}
+
+data_dir = "[data_dir]/"
+
+```
+
+## Load Data
+Next we load in the data:
+
+```{r Load_data}
+
+#Full 112 seq summary file
+full_112 <- read_table("sequencing_summary_112.txt")
+
+#Full 109 seq summary file
+full_109 <- read_table("sequencing_summary_109.txt")
+
+#Adaptive 112 seq summary file
+adaptive_112_sum <- read_table("sequencing_summary_112_a.txt")
+#Read IDs in first 8 hours
+adaptive_112 <- read_table("eight_hour_read_length_112.txt")
+
+#Adaptive 109 seq summary file
+adaptive_109_sum <- read_table("sequencing_summary_109.txt")
+#Read IDs in first 8 hours
+adaptive_109 <- read_table("eight_hour_read_length_109_a.txt")
+```
+
+### Adaptive data is the total length of reads from summary seq file ($14= sequence_length_template, $7= start_time)
+
+## Calculate Adaptive 112 total bases 
+
+```{r Adaptive 112 total bases}
+
+names(adaptive_112)[1] <- "read_length"
+
+adaptive_112_total <- sum(adaptive_112$read_length)
+
+```
+
+## Calculate Full 112 total bases 
+
+```{r Full 112 total bases}
+
+full_112_total <- sum(full_112$sequence_length_template)
+
+```
+
+## Calculate Adaptive 109 total bases 
+
+```{r Adaptive 109 total bases}
+
+names(adaptive_109)[1] <- "read_length"
+
+adaptive_109_total <- sum(adaptive_109$read_length)
+
+```
+
+## Calculate Adaptive 109 total bases 
+
+```{r Full 109 total bases}
+
+full_109_total <- sum(full_109$sequence_length_template)
+
+```
+
+## Calculate the number of bases mapped to *S. cerevisiae* (using minimap2) and GCF_000146045.2_Saccharomyces_cerevisiae.fasta in each raw file
+
+```{r Raw No. bases mapped to SC for 112 and 109}
+
+# Function to read and rename columns
+read_and_rename <- function(file_path, suffix) {
+  data <- read_table(file_path)
+  names(data)[1] <- "read_id"
+  return(data)
+}
+
+# Function to perform inner join and calculate total
+join_and_total <- function(map_data, sum_data) {
+  inner_join_data <- inner_join(map_data, sum_data, by = "read_id")
+  total <- sum(inner_join_data$sequence_length_template)
+  return(total)
+}
+
+# Initialize empty table
+sum_table_112 <- data.frame(Sample_Name = character(), Total_Sum = numeric(), stringsAsFactors = FALSE)
+
+# Process adaptive data for 112
+for (suffix in c("r", "t")) {
+  for (i in 1:3) {
+    file_name <- paste("[data_dir]/SC_112_adaptive.", suffix, "_", i, ".txt", sep = "")
+    sum_value <- join_and_total(read_and_rename(file_name, suffix), adaptive_112_sum)
+    sum_table_112 <- rbind(sum_table_112, data.frame(Sample_Name = paste("sum_112_", i, suffix, sep = "_"), Total_Sum = sum_value))
+  }
+}
+
+# Process full data for 112
+for (suffix in c("r", "t")) {
+  for (i in 1:3) {
+    file_name <- paste("[data_dir]/SC_112_full.", suffix, "_", i, ".txt", sep = "")
+    sum_value <- join_and_total(read_and_rename(file_name, suffix), full_112)
+    sum_table_112 <- rbind(sum_table_112, data.frame(Sample_Name = paste("full_112_", i, suffix, sep = "_"), Total_Sum = sum_value))
+  }
+}
+
+# Print the table
+print(sum_table_112)
+
+# Initialize empty table
+sum_table_109 <- data.frame(Sample_Name = character(), Total_Sum = numeric(), stringsAsFactors = FALSE)
+
+# Process adaptive data for 109
+for (suffix in c("r", "t")) {
+  for (i in 1:3) {
+    file_name <- paste("[data_dir]/SC_109_adaptive.", suffix, "_", i, ".txt", sep = "")
+    sum_value <- join_and_total(read_and_rename(file_name, suffix), adaptive_109_sum)
+    sum_table_109 <- rbind(sum_table_109, data.frame(Sample_Name = paste("sum_109_", i, suffix, sep = "_"), Total_Sum = sum_value))
+  }
+}
+
+# Process full data for 109
+for (suffix in c("r", "t")) {
+  for (i in 1:3) {
+    file_name <- paste("[data_dir]/SC_109_full.", suffix, "_", i, ".txt", sep = "")
+    sum_value <- join_and_total(read_and_rename(file_name, suffix), full_109)
+    sum_table_109 <- rbind(sum_table_109, data.frame(Sample_Name = paste("full_109_", i, suffix, sep = "_"), Total_Sum = sum_value))
+  }
+}
+
+# Print the table
+print(sum_table_109)
+
+```
+
