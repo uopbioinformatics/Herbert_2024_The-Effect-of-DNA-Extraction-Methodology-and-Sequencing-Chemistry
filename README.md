@@ -12,13 +12,13 @@ Scripts for replicating analyses from our manuscript are provided in the `script
 
 ### Effect of Commercial DNA Extraction Methodology on ZMC Compositional Bias
 
-For comparison of commercial DNA extraction kits on compositional bias of ZMC, either first run the programme Emu using parameters detailed within the manuscript on the raw fastq files, or use the output files provided within this repository (in `files/`) and use the R Markdown script ‘sq_comp_paper_analysis_published.Rmd’ to reproduce statistical values and figures.
+For comparison of commercial DNA extraction kits on compositional bias of ZMC, either first run the programme Emu using parameters detailed within the manuscript on the raw fastq files, or use the output files provided within this repository (in `files/`) and use the R Markdown script `sq_comp_paper_analysis_published.Rmd` to reproduce statistical values and figures.
 
 ### Effect of ONT Sequencing Chemistry on ZMC Metagenomic Assembly
 
-For analysis of the effect of ONT sequencing chemistry (LSK109 vs LSK112) on metagenomic assembly of ZMC data first run the code outlined in ‘ZMC_Metagenomic_assessment_analysis.txt’ using the raw files provided in the SRA Bioprojects noted above, and use ‘average_cov_samtools_coverage.sh’ to get coverage and depth statistics. Figure generation can be done using these files, or alternatively those provided in `files/`, using the ‘sq_comp_paper_analysis_published.Rmd’ R Markdown script.
+For analysis of the effect of ONT sequencing chemistry (LSK109 vs LSK112) on metagenomic assembly of ZMC data first run the code outlined in `ZMC_Metagenomic_assessment_analysis.txt` using the raw files provided in the SRA Bioprojects noted above, and use `average_cov_samtools_coverage.sh` to get coverage and depth statistics. Figure generation can be done using these files, or alternatively those provided in `files/`, using the `sq_comp_paper_analysis_published.Rmd` R Markdown script.
 
 ### Effect of ONT Sequencing Chemistry on Adaptive Sampling
 
-Using the files within the `files/` directory in this repository, first run the steps outlined in ‘SC_Adaptive_Analysis.txt’ to get files that can be input to the R Markdown script ‘SC_adaptive_analysis.Rmd’ to get number of bases used for further analyses. For estimation of coverage and depth, and production of files required to create the Circos plot of coverage, first use the code within ‘Adaptive_Circos_SC.txt’ and then use the resulting data (also found in `files/`) as input for the R Markdown script ‘RMD_SC_adaptive_analysis.Rmd’.
+Using the files within the `files/` directory in this repository, first run the steps outlined in `SC_Adaptive_Analysis.txt` to get files that can be input to the R Markdown script `SC_adaptive_analysis.Rmd` to get number of bases used for further analyses. For estimation of coverage and depth, and production of files required to create the Circos plot of coverage, first use the code within `Adaptive_Circos_SC.txt` and then use the resulting data (also found in `files/`) as input for the R Markdown script `RMD_SC_adaptive_analysis.Rmd`.
 
