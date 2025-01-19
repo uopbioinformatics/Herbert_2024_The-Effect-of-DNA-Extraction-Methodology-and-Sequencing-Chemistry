@@ -2,7 +2,7 @@
 This repository contains the final R Markdown scripts for the analyses reported in 'Impact of Microbiological Molecular Methodologies on Oxford Nanopore Adaptive Sampling in Metagenomic Studies' (Herbert et al., 2025). All scripts have been modified to remove directory names (please change `[data_dir]` for your working directory path), but are otherwise as used for creation of the figures and data analyses reported in the manuscript. 
 
 ## Data availability
-All raw sequencing data files are available from the National Center for Biotechnology Information (NCBI) Sequence Read Archive (SRA) under BioProjects PRJNA934869 and PRJNA934863.
+All raw sequencing data files and sequencing summary files are available from the National Center for Biotechnology Information (NCBI) Sequence Read Archive (SRA) under BioProjects PRJNA934869 and PRJNA934863.
 
 
 ## Analysis files
