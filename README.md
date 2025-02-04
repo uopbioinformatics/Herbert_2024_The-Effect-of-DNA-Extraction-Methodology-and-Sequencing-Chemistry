@@ -21,3 +21,5 @@ For analysis of the effect of ONT sequencing chemistry (LSK109 vs LSK112) on met
 
 Using the files within the [files](files) directory in this repository, first run the steps outlined in [SC_Adaptive_Analysis.txt](scripts/SC_Adaptive_Analysis.txt) to get files that can be input to the R Markdown script [SC_adaptive_8_hour_bases.Rmd](scripts/SC_adaptive_8_hour_bases.Rmd) to get number of bases used for further analyses. For estimation of coverage and depth, and production of files required to create the Circos plot of coverage, first use the code within [Adaptive_Circos_SC.txt](scripts/Adaptive_Circos_SC.txt) and then use the resulting data (also found in [files](files)) as input for the R Markdown script [RMD_SC_adaptive_analysis.Rmd](scripts/RMD_SC_adaptive_analysis.Rmd).
 
+Please note that the sequencing summary files, and the subset of reads for use in the [SC_Adaptive_Analysis.txt](scripts/SC_Adaptive_Analysis.txt) script are too large to be uploaded to Github, but can be requested by contacting [samuel.robson@port.ac.uk](samuel.robson@port.ac.uk).
+
